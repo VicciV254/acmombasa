@@ -6,7 +6,7 @@ enum SplashStatus { loading, ready, failed }
 
 /// Drives the splash screen. Holds no UI code.
 class SplashController extends ChangeNotifier {
-  SplashController({AppInitializer initializer = const AppInitializer()})
+  SplashController({required AppInitializer initializer})
       : _initializer = initializer;
 
   final AppInitializer _initializer;

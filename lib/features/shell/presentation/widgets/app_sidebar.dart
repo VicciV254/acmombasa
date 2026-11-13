@@ -37,7 +37,10 @@ class AppSidebar extends StatelessWidget {
               padding: EdgeInsets.fromLTRB(20, 20, 20, 8),
               child: Align(
                 alignment: Alignment.centerLeft,
-                child: Text('RECEPTION CONSOLE', style: AppTextStyles.sidebarLabel),
+                child: Text(
+                  'RECEPTION CONSOLE',
+                  style: AppTextStyles.sidebarLabel,
+                ),
               ),
             ),
           Expanded(
@@ -86,7 +89,7 @@ class _SidebarFooter extends StatelessWidget {
                 SizedBox(width: 8),
                 Expanded(
                   child: Text(
-                    'KNLS BURUHANI CENTER',
+                    'AMERICAN CORNER MOMBASA:MEWA',
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: AppTextStyles.sidebarLabel,

@@ -1,6 +1,7 @@
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_spacing.dart';
@@ -18,22 +19,23 @@ typedef DestinationBuilder = Widget Function(
 
 /// Shown at launch while the app initialises, then replaces itself with the
 /// screen returned by [destinationBuilder].
-class SplashScreen extends StatefulWidget {
+class SplashScreen extends ConsumerStatefulWidget {
   const SplashScreen({super.key, required this.destinationBuilder});
 
   final DestinationBuilder destinationBuilder;
 
   @override
-  State<SplashScreen> createState() => _SplashScreenState();
+  ConsumerState<SplashScreen> createState() => _SplashScreenState();
 }
 
-class _SplashScreenState extends State<SplashScreen> {
+class _SplashScreenState extends ConsumerState<SplashScreen> {
   late final SplashController _controller;
 
   @override
   void initState() {
     super.initState();
-    _controller = SplashController()..addListener(_onChanged);
+    _controller = SplashController(initializer: AppInitializer(ref))
+      ..addListener(_onChanged);
     _controller.start();
   }
 

@@ -93,8 +93,11 @@ class StatCard extends StatelessWidget {
           Row(
             children: [
               if (positive) ...[
-                const Icon(Icons.trending_up,
-                    size: 14, color: AppColors.success),
+                const Icon(
+                  Icons.trending_up,
+                  size: 14,
+                  color: AppColors.success,
+                ),
                 const SizedBox(width: 4),
               ],
               Flexible(

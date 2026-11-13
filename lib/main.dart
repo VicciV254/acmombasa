@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'core/services/app_initializer.dart';
 import 'core/theme/app_theme.dart';
@@ -8,7 +9,7 @@ import 'features/splash/presentation/splash_screen.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
-  runApp(const AmericanCornerApp());
+  runApp(const ProviderScope(child: AmericanCornerApp()));
 }
 
 class AmericanCornerApp extends StatelessWidget {
@@ -26,12 +27,15 @@ class AmericanCornerApp extends StatelessWidget {
 }
 
 Widget _destinationFor(BuildContext context, StartupDestination destination) {
+  void openShell(BuildContext ctx) => Navigator.of(ctx).pushReplacement(
+        MaterialPageRoute<void>(builder: (_) => const AppShell()),
+      );
+
   return switch (destination) {
     StartupDestination.dashboard => const AppShell(),
-    StartupDestination.signIn => SignInScreen(
-        onSignedIn: (ctx) => Navigator.of(ctx).pushReplacement(
-          MaterialPageRoute<void>(builder: (_) => const AppShell()),
-        ),
-      ),
+    StartupDestination.signIn =>
+      SignInScreen(mode: AuthMode.signIn, onSignedIn: openShell),
+    StartupDestination.setup =>
+      SignInScreen(mode: AuthMode.setup, onSignedIn: openShell),
   };
 }

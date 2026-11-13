@@ -1,27 +1,33 @@
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_spacing.dart';
 import '../../../../core/constants/app_text_styles.dart';
+import '../../../../core/domain/app_exception.dart';
+import '../../../../core/domain/models.dart';
+import '../../../../core/providers.dart';
+import '../../../../core/services/badge_printer.dart';
+import '../../../../core/services/visit_exporter.dart';
+import '../../../../core/utils/date_format.dart';
+import '../../../../core/utils/text_utils.dart';
 import '../../../../core/widgets/app_card.dart';
 import '../../../../core/widgets/initials_avatar.dart';
 import '../../../../core/widgets/pill.dart';
-import '../../../../core/widgets/preview_notice.dart';
-import '../../data/dashboard_sample_data.dart';
-import '../../domain/dashboard_models.dart';
+import '../../application/dashboard_providers.dart';
 
 enum _LogFilter { all, insideNow, checkedOut }
 
-class RecentCheckInsCard extends StatefulWidget {
+class RecentCheckInsCard extends ConsumerStatefulWidget {
   const RecentCheckInsCard({super.key});
 
   @override
-  State<RecentCheckInsCard> createState() => _RecentCheckInsCardState();
+  ConsumerState<RecentCheckInsCard> createState() => _RecentCheckInsCardState();
 }
 
-class _RecentCheckInsCardState extends State<RecentCheckInsCard> {
+class _RecentCheckInsCardState extends ConsumerState<RecentCheckInsCard> {
   static const double _minTableWidth = 900;
   // Column flex values: name, card, time, purpose, status, actions.
   static const List<int> _flex = [28, 18, 14, 22, 20, 18];
@@ -33,23 +39,65 @@ class _RecentCheckInsCardState extends State<RecentCheckInsCard> {
     'STATUS',
     'ACTIONS',
   ];
+  static const int _pageSize = 25;
 
   _LogFilter _filter = _LogFilter.all;
+  int _visibleCount = _pageSize;
+  bool _exporting = false;
 
-  List<CheckInRecord> get _rows {
-    final all = DashboardSampleData.recentCheckIns;
-    return switch (_filter) {
-      _LogFilter.all => all,
-      _LogFilter.insideNow =>
-        all.where((r) => r.status == VisitStatus.checkedIn).toList(),
-      _LogFilter.checkedOut =>
-        all.where((r) => r.status == VisitStatus.checkedOut).toList(),
-    };
+  void _toast(String message, {SnackBarAction? action}) {
+    ScaffoldMessenger.of(context)
+      ..hideCurrentSnackBar()
+      ..showSnackBar(
+        SnackBar(
+          content: Text(message),
+          action: action,
+          duration: const Duration(seconds: 4),
+        ),
+      );
+  }
+
+  Future<void> _guard(Future<void> Function() action) async {
+    try {
+      await action();
+    } catch (e) {
+      if (mounted) _toast(friendlyError(e));
+    }
+  }
+
+  Future<void> _export(List<VisitLogEntry> all) async {
+    if (_exporting) return;
+    setState(() => _exporting = true);
+    try {
+      final file = await VisitExporter.exportDay(DateTime.now(), all);
+      if (!mounted) return;
+      _toast(
+        'Saved ${all.length} ${all.length == 1 ? 'row' : 'rows'} to ${file.path}',
+        action: SnackBarAction(
+          label: 'Show',
+          onPressed: () => VisitExporter.reveal(file),
+        ),
+      );
+    } catch (_) {
+      if (mounted) _toast('Could not save the daily sheet.');
+    } finally {
+      if (mounted) setState(() => _exporting = false);
+    }
   }
 
   @override
   Widget build(BuildContext context) {
-    final rows = _rows;
+    final all =
+        ref.watch(todayLogProvider).asData?.value ?? const <VisitLogEntry>[];
+    final inside = all.where((e) => e.isInside).toList();
+    final out = all.where((e) => !e.isInside).toList();
+
+    final filtered = switch (_filter) {
+      _LogFilter.all => all,
+      _LogFilter.insideNow => inside,
+      _LogFilter.checkedOut => out,
+    };
+    final shown = filtered.take(_visibleCount).toList();
 
     return AppCard(
       padding: EdgeInsets.zero,
@@ -58,7 +106,7 @@ class _RecentCheckInsCardState extends State<RecentCheckInsCard> {
         children: [
           Padding(
             padding: const EdgeInsets.all(AppSpacing.lg),
-            child: _buildHeader(context),
+            child: _buildHeader(all, inside.length, out.length),
           ),
           LayoutBuilder(
             builder: (context, constraints) {
@@ -70,7 +118,8 @@ class _RecentCheckInsCardState extends State<RecentCheckInsCard> {
                   child: Column(
                     children: [
                       _buildHeaderRow(),
-                      for (final record in rows) _buildDataRow(context, record),
+                      if (shown.isEmpty) _buildEmptyRow(),
+                      for (final entry in shown) _buildDataRow(entry),
                     ],
                   ),
                 ),
@@ -80,12 +129,23 @@ class _RecentCheckInsCardState extends State<RecentCheckInsCard> {
           Padding(
             padding: const EdgeInsets.symmetric(
               horizontal: AppSpacing.lg,
-              vertical: 14,
+              vertical: 10,
             ),
-            child: Text(
-              'Showing ${rows.length} of ${DashboardSampleData.totalToday} '
-              'check-ins today (sample data)',
-              style: AppTextStyles.caption,
+            child: Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    'Showing ${shown.length} of ${filtered.length} '
+                    'check-ins today',
+                    style: AppTextStyles.caption,
+                  ),
+                ),
+                if (shown.length < filtered.length)
+                  TextButton(
+                    onPressed: () => setState(() => _visibleCount += _pageSize),
+                    child: const Text('Show more'),
+                  ),
+              ],
             ),
           ),
         ],
@@ -93,7 +153,19 @@ class _RecentCheckInsCardState extends State<RecentCheckInsCard> {
     );
   }
 
-  Widget _buildHeader(BuildContext context) {
+  Widget _buildEmptyRow() {
+    return const Padding(
+      padding: EdgeInsets.symmetric(vertical: 36),
+      child: Center(
+        child: Text(
+          'No check-ins to show yet today.',
+          style: AppTextStyles.body,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildHeader(List<VisitLogEntry> all, int inside, int out) {
     return Wrap(
       spacing: AppSpacing.md,
       runSpacing: 12,
@@ -107,8 +179,11 @@ class _RecentCheckInsCardState extends State<RecentCheckInsCard> {
             children: [
               Row(
                 children: [
-                  Icon(Icons.receipt_long_outlined,
-                      size: 22, color: AppColors.brightBlue),
+                  Icon(
+                    Icons.receipt_long_outlined,
+                    size: 22,
+                    color: AppColors.brightBlue,
+                  ),
                   SizedBox(width: 8),
                   Flexible(
                     child: Text(
@@ -134,10 +209,18 @@ class _RecentCheckInsCardState extends State<RecentCheckInsCard> {
           children: [
             _FilterTabs(
               selected: _filter,
-              onChanged: (f) => setState(() => _filter = f),
+              counts: {
+                _LogFilter.all: all.length,
+                _LogFilter.insideNow: inside,
+                _LogFilter.checkedOut: out,
+              },
+              onChanged: (f) => setState(() {
+                _filter = f;
+                _visibleCount = _pageSize;
+              }),
             ),
             OutlinedButton.icon(
-              onPressed: () => showPreviewNotice(context),
+              onPressed: _exporting ? null : () => _export(all),
               icon: const Icon(Icons.file_download_outlined, size: 18),
               label: const Text('Export Daily Sheet'),
               style: OutlinedButton.styleFrom(minimumSize: const Size(0, 38)),
@@ -169,8 +252,9 @@ class _RecentCheckInsCardState extends State<RecentCheckInsCard> {
     );
   }
 
-  Widget _buildDataRow(BuildContext context, CheckInRecord r) {
-    final checkedIn = r.status == VisitStatus.checkedIn;
+  Widget _buildDataRow(VisitLogEntry e) {
+    final inside = e.isInside;
+    final actionColor = inside ? AppColors.americanRed : AppColors.brightBlue;
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
@@ -183,20 +267,27 @@ class _RecentCheckInsCardState extends State<RecentCheckInsCard> {
             flex: _flex[0],
             child: Row(
               children: [
-                InitialsAvatar(initials: r.initials, size: 34),
+                InitialsAvatar(
+                  initials: initialsOf(e.visitor.fullName),
+                  size: 34,
+                ),
                 const SizedBox(width: 10),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(r.name,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: AppTextStyles.bodyStrong),
-                      Text(r.subtitle,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: AppTextStyles.caption.copyWith(fontSize: 11)),
+                      Text(
+                        e.visitor.fullName,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: AppTextStyles.bodyStrong,
+                      ),
+                      Text(
+                        e.visitor.category,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: AppTextStyles.caption.copyWith(fontSize: 11),
+                      ),
                     ],
                   ),
                 ),
@@ -207,19 +298,22 @@ class _RecentCheckInsCardState extends State<RecentCheckInsCard> {
             flex: _flex[1],
             child: Align(
               alignment: Alignment.centerLeft,
-              child: Pill(label: r.cardNumber, fontSize: 11),
+              child: Pill(label: e.visitor.memberId, fontSize: 11),
             ),
           ),
           Expanded(
             flex: _flex[2],
-            child: Text(r.checkInTime, style: AppTextStyles.bodyStrong),
+            child: Text(
+              DateFormatter.time12(e.visit.checkInAt),
+              style: AppTextStyles.bodyStrong,
+            ),
           ),
           Expanded(
             flex: _flex[3],
             child: Align(
               alignment: Alignment.centerLeft,
               child: Pill(
-                label: r.purpose,
+                label: e.visit.purpose,
                 background: AppColors.infoSoft,
                 foreground: AppColors.info,
               ),
@@ -229,14 +323,18 @@ class _RecentCheckInsCardState extends State<RecentCheckInsCard> {
             flex: _flex[4],
             child: Align(
               alignment: Alignment.centerLeft,
-              child: checkedIn
+              child: inside
                   ? const Pill(
                       label: 'Checked In',
                       background: AppColors.successSoft,
                       foreground: AppColors.success,
                       dotColor: AppColors.successDot,
                     )
-                  : Pill(label: 'Checked Out (${r.checkedOutAt})'),
+                  : Pill(
+                      label:
+                          'Checked Out '
+                          '(${DateFormatter.time12(e.visit.checkOutAt!)})',
+                    ),
             ),
           ),
           Expanded(
@@ -244,30 +342,43 @@ class _RecentCheckInsCardState extends State<RecentCheckInsCard> {
             child: Row(
               children: [
                 OutlinedButton(
-                  onPressed: () => showPreviewNotice(context),
+                  onPressed: () => _guard(() async {
+                    final repo = ref.read(visitRepositoryProvider);
+                    if (inside) {
+                      await repo.checkOut(e.visit.id);
+                    } else {
+                      final staff = ref.read(sessionProvider);
+                      if (staff == null) return;
+                      await repo.readmit(previous: e.visit, staffId: staff.id);
+                    }
+                  }),
                   style: OutlinedButton.styleFrom(
                     minimumSize: const Size(0, 32),
                     padding: const EdgeInsets.symmetric(horizontal: 12),
                     visualDensity: VisualDensity.compact,
-                    foregroundColor:
-                        checkedIn ? AppColors.americanRed : AppColors.brightBlue,
+                    foregroundColor: actionColor,
                     side: BorderSide(
-                      color: (checkedIn
-                              ? AppColors.americanRed
-                              : AppColors.brightBlue)
-                          .withValues(alpha: 0.45),
+                      color: actionColor.withValues(alpha: 0.45),
                     ),
                     textStyle: const TextStyle(
-                        fontSize: 12, fontWeight: FontWeight.w700),
+                      fontSize: 12,
+                      fontWeight: FontWeight.w700,
+                    ),
                   ),
-                  child: Text(checkedIn ? 'Check Out' : 'Re-Admit'),
+                  child: Text(inside ? 'Check Out' : 'Re-Admit'),
                 ),
                 IconButton(
                   tooltip: 'Print badge',
-                  onPressed: () => showPreviewNotice(context),
+                  onPressed: () => _guard(
+                    () =>
+                        BadgePrinter.print(visitor: e.visitor, visit: e.visit),
+                  ),
                   visualDensity: VisualDensity.compact,
-                  icon: const Icon(Icons.badge_outlined,
-                      size: 18, color: AppColors.textMuted),
+                  icon: const Icon(
+                    Icons.badge_outlined,
+                    size: 18,
+                    color: AppColors.textMuted,
+                  ),
                 ),
               ],
             ),
@@ -279,19 +390,27 @@ class _RecentCheckInsCardState extends State<RecentCheckInsCard> {
 }
 
 class _FilterTabs extends StatelessWidget {
-  const _FilterTabs({required this.selected, required this.onChanged});
+  const _FilterTabs({
+    required this.selected,
+    required this.counts,
+    required this.onChanged,
+  });
 
   final _LogFilter selected;
+  final Map<_LogFilter, int> counts;
   final ValueChanged<_LogFilter> onChanged;
 
   @override
   Widget build(BuildContext context) {
     final tabs = <(_LogFilter, String)>[
-      (_LogFilter.all, 'All (${DashboardSampleData.totalToday})'),
-      (_LogFilter.insideNow, 'Inside Now (${DashboardSampleData.insideNow})'),
+      (_LogFilter.all, 'All (${counts[_LogFilter.all] ?? 0})'),
+      (
+        _LogFilter.insideNow,
+        'Inside Now (${counts[_LogFilter.insideNow] ?? 0})',
+      ),
       (
         _LogFilter.checkedOut,
-        'Checked Out (${DashboardSampleData.checkedOutToday})'
+        'Checked Out (${counts[_LogFilter.checkedOut] ?? 0})',
       ),
     ];
 

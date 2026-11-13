@@ -1,39 +1,50 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_spacing.dart';
 import '../../../../core/constants/app_text_styles.dart';
+import '../../../../core/data/visit_repository.dart';
+import '../../../../core/domain/models.dart';
+import '../../../../core/utils/date_format.dart';
 import '../../../../core/widgets/app_card.dart';
 import '../../../../core/widgets/pill.dart';
-import '../../data/dashboard_sample_data.dart';
-import '../../domain/dashboard_models.dart';
+import '../../application/dashboard_providers.dart';
 
-class TodaysActivitiesCard extends StatelessWidget {
+class TodaysActivitiesCard extends ConsumerWidget {
   const TodaysActivitiesCard({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final activities =
+      ref.watch(todaysActivitiesProvider).asData?.value ?? const <ActivityView>[];
+    final stats = ref.watch(dashboardStatsProvider).asData?.value;
+    final anyLive = activities.any((a) => a.isLive);
+    final total = activities.fold<int>(0, (sum, a) => sum + a.attendees);
+
     return AppCard(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          const Row(
+          Row(
             children: [
-              Icon(Icons.event_available_outlined,
+              const Icon(Icons.event_available_outlined,
                   size: 22, color: AppColors.brightBlue),
-              SizedBox(width: 8),
-              Expanded(
+              const SizedBox(width: 8),
+              const Expanded(
                 child: Text("Today's Activities",
                     style: AppTextStyles.cardTitle),
               ),
-              SizedBox(width: 8),
+              const SizedBox(width: 8),
               Flexible(
-                child: Pill(
-                  label: 'HAPPENING NOW',
-                  background: AppColors.successSoft,
-                  foreground: AppColors.success,
-                  dotColor: AppColors.successDot,
-                ),
+                child: anyLive
+                    ? const Pill(
+                        label: 'HAPPENING NOW',
+                        background: AppColors.successSoft,
+                        foreground: AppColors.success,
+                        dotColor: AppColors.successDot,
+                      )
+                    : const Pill(label: 'NONE LIVE'),
               ),
             ],
           ),
@@ -44,7 +55,15 @@ class TodaysActivitiesCard extends StatelessWidget {
             style: AppTextStyles.caption,
           ),
           const SizedBox(height: AppSpacing.md),
-          for (final item in DashboardSampleData.activities) _ActivityTile(item),
+          if (activities.isEmpty)
+            const Padding(
+              padding: EdgeInsets.symmetric(vertical: AppSpacing.lg),
+              child: Center(
+                child: Text('No programs scheduled.', style: AppTextStyles.body),
+              ),
+            )
+          else
+            for (final item in activities) _ActivityTile(item),
           const SizedBox(height: 2),
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
@@ -52,16 +71,16 @@ class TodaysActivitiesCard extends StatelessWidget {
               color: AppColors.neutralSoft,
               borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
             ),
-            child: const Row(
+            child: Row(
               children: [
-                Expanded(
+                const Expanded(
                   child: Text('Total Scheduled Engagement',
                       style: AppTextStyles.bodyStrong),
                 ),
-                SizedBox(width: 8),
+                const SizedBox(width: 8),
                 Flexible(
                   child: Pill(
-                    label: DashboardSampleData.totalEngagement,
+                    label: '$total ${total == 1 ? 'participant' : 'participants'}',
                     background: AppColors.navy,
                     foreground: AppColors.white,
                     fontSize: 11.5,
@@ -71,28 +90,49 @@ class TodaysActivitiesCard extends StatelessWidget {
             ),
           ),
           const SizedBox(height: AppSpacing.md),
-          const _CapacityBanner(),
+          _CapacityBanner(stats: stats),
         ],
       ),
     );
   }
 }
 
+IconData _iconFor(String name) {
+  final n = name.toLowerCase();
+  if (n.contains('conversation')) return Icons.forum_outlined;
+  if (n.contains('research') || n.contains('study')) return Icons.menu_book_outlined;
+  if (n.contains('culture')) return Icons.palette_outlined;
+  if (n.contains('english') || n.contains('toefl')) return Icons.translate;
+  if (n.contains('game') || n.contains('maker')) return Icons.sports_esports_outlined;
+  return Icons.event_note_outlined;
+}
+
+String _scheduleOf(ActivityView v) {
+  final p = v.program;
+  if (p.startMinute == null || p.endMinute == null) {
+    return 'All Day • ${p.location}';
+  }
+  return '${DateFormatter.minutesToTime12(p.startMinute!)} - '
+      '${DateFormatter.minutesToTime12(p.endMinute!)} • ${p.location}';
+}
+
 class _ActivityTile extends StatelessWidget {
   const _ActivityTile(this.item);
 
-  final ActivityItem item;
+  final ActivityView item;
 
   @override
   Widget build(BuildContext context) {
+    final note = item.isLive ? 'Session currently active' : item.program.note;
+
     return Container(
       margin: const EdgeInsets.only(bottom: 10),
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: item.isActive ? AppColors.surfaceTinted : AppColors.white,
+        color: item.isLive ? AppColors.surfaceTinted : AppColors.white,
         borderRadius: BorderRadius.circular(AppSpacing.radiusLg - 2),
         border: Border.all(
-          color: item.isActive
+          color: item.isLive
               ? AppColors.brightBlue.withValues(alpha: 0.45)
               : AppColors.border,
         ),
@@ -107,7 +147,8 @@ class _ActivityTile extends StatelessWidget {
               color: AppColors.infoSoft,
               borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
             ),
-            child: Icon(item.icon, size: 18, color: AppColors.brightBlue),
+            child: Icon(_iconFor(item.program.name),
+                size: 18, color: AppColors.brightBlue),
           ),
           const SizedBox(width: 12),
           Expanded(
@@ -118,19 +159,21 @@ class _ActivityTile extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Expanded(
-                      child: Text(item.title, style: AppTextStyles.bodyStrong),
+                      child: Text(item.program.name,
+                          style: AppTextStyles.bodyStrong),
                     ),
                     const SizedBox(width: 8),
                     Pill(
-                      label: item.badge,
+                      label: '${item.attendees} '
+                          '${item.attendees == 1 ? 'Attendee' : 'Attendees'}',
                       background: AppColors.infoSoft,
                       foreground: AppColors.info,
                     ),
                   ],
                 ),
                 const SizedBox(height: 2),
-                Text(item.schedule, style: AppTextStyles.caption),
-                if (item.note != null) ...[
+                Text(_scheduleOf(item), style: AppTextStyles.caption),
+                if (note != null) ...[
                   const SizedBox(height: 6),
                   Row(
                     children: [
@@ -138,7 +181,7 @@ class _ActivityTile extends StatelessWidget {
                         width: 6,
                         height: 6,
                         decoration: BoxDecoration(
-                          color: item.isActive
+                          color: item.isLive
                               ? AppColors.successDot
                               : AppColors.textFaint,
                           shape: BoxShape.circle,
@@ -147,15 +190,14 @@ class _ActivityTile extends StatelessWidget {
                       const SizedBox(width: 6),
                       Flexible(
                         child: Text(
-                          item.note!,
+                          note,
                           style: AppTextStyles.caption.copyWith(
                             fontSize: 11,
-                            color: item.isActive
+                            color: item.isLive
                                 ? AppColors.success
                                 : AppColors.textMuted,
-                            fontWeight: item.isActive
-                                ? FontWeight.w600
-                                : FontWeight.w400,
+                            fontWeight:
+                                item.isLive ? FontWeight.w600 : FontWeight.w400,
                           ),
                         ),
                       ),
@@ -171,13 +213,22 @@ class _ActivityTile extends StatelessWidget {
   }
 }
 
-/// Stand-in for the photo banner in the reference design (no image asset
-/// available): a branded gradient with the capacity note.
+/// Live occupancy summary. (The reference design shows a photo here; this is a
+/// branded banner until a real image asset is supplied.)
 class _CapacityBanner extends StatelessWidget {
-  const _CapacityBanner();
+  const _CapacityBanner({required this.stats});
+
+  final DashboardStats? stats;
 
   @override
   Widget build(BuildContext context) {
+    final s = stats;
+    final text = s == null
+        ? 'Loading occupancy…'
+        : '${s.inside} of ${s.capacity} seats in use • '
+            '${s.workstationsInUse} of ${VisitRepository.workstationCount} '
+            'workstations occupied';
+
     return ClipRRect(
       borderRadius: BorderRadius.circular(AppSpacing.radiusLg - 2),
       child: Container(
@@ -200,13 +251,13 @@ class _CapacityBanner extends StatelessWidget {
                 color: Colors.white.withValues(alpha: 0.08),
               ),
             ),
-            const Positioned(
+            Positioned(
               left: 16,
               right: 16,
               bottom: 14,
               child: Text(
-                'Room A & Lab 2 near max for peak sessions',
-                style: TextStyle(
+                text,
+                style: const TextStyle(
                   color: AppColors.white,
                   fontSize: 12.5,
                   fontWeight: FontWeight.w600,

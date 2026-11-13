@@ -42,4 +42,6 @@ abstract final class AppColors {
   static const Color infoSoft = Color(0xFFE3EDFF);
   static const Color neutralSoft = Color(0xFFF1F5F9);
   static const Color dangerSoft = Color(0xFFFEE2E2);
+  static const Color warning = Color(0xFFB45309);
+  static const Color warningSoft = Color(0xFFFEF3C7);
 }

@@ -1,11 +1,15 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_spacing.dart';
 import '../../../core/constants/app_text_styles.dart';
+import '../../../core/sync/sync_controller.dart';
 import '../../../core/widgets/pill.dart';
-import '../../../core/widgets/preview_notice.dart';
-import '../data/dashboard_sample_data.dart';
+import '../../kiosk/presentation/kiosk_screen.dart';
+import '../../shell/presentation/widgets/cloud_status_dialog.dart';
+import '../application/dashboard_providers.dart';
+import '../application/stat_cards.dart' as dashboard_stats;
 import 'widgets/find_visitor_card.dart';
 import 'widgets/recent_checkins_card.dart';
 import 'widgets/stat_card.dart';
@@ -57,23 +61,30 @@ class DashboardScreen extends StatelessWidget {
   }
 }
 
-class _WelcomeHeader extends StatelessWidget {
+class _WelcomeHeader extends ConsumerWidget {
   const _WelcomeHeader({required this.stacked});
 
   final bool stacked;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final pending = ref.watch(pendingSyncCountProvider).asData?.value ?? 0;
+    final syncing =
+        ref.watch(syncControllerProvider).phase == SyncPhase.syncing;
+
     final title = Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Wrap(
+        Wrap(
           spacing: 10,
           runSpacing: 6,
           crossAxisAlignment: WrapCrossAlignment.center,
           children: [
-            Text('Welcome back, Receptionist', style: AppTextStyles.pageTitle),
-            Pill(
+            const Text(
+              'Welcome back, Receptionist',
+              style: AppTextStyles.pageTitle,
+            ),
+            const Pill(
               label: 'ACTIVE SESSION',
               background: AppColors.infoSoft,
               foreground: AppColors.info,
@@ -94,12 +105,20 @@ class _WelcomeHeader extends StatelessWidget {
       runSpacing: 10,
       children: [
         OutlinedButton.icon(
-          onPressed: () => showPreviewNotice(context),
-          icon: const Icon(Icons.sync, size: 18),
-          label: const Text('Sync Queue (0)'),
+          onPressed: syncing ? null : () => _syncQueue(context, ref),
+          icon: syncing
+              ? const SizedBox(
+                  width: 16,
+                  height: 16,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                )
+              : const Icon(Icons.sync, size: 18),
+          label: Text('Sync Queue ($pending)'),
         ),
         FilledButton.icon(
-          onPressed: () => showPreviewNotice(context),
+          onPressed: () => Navigator.of(
+            context,
+          ).push(MaterialPageRoute<void>(builder: (_) => const KioskScreen())),
           icon: const Icon(Icons.tv_outlined, size: 18),
           label: const Text('Batch Kiosk Mode'),
           style: FilledButton.styleFrom(backgroundColor: AppColors.navy),
@@ -110,7 +129,11 @@ class _WelcomeHeader extends StatelessWidget {
     if (stacked) {
       return Column(
         crossAxisAlignment: CrossAxisAlignment.start,
-        children: [title, const SizedBox(height: AppSpacing.md), actions],
+        children: [
+          title,
+          const SizedBox(height: AppSpacing.md),
+          actions,
+        ],
       );
     }
     return Row(
@@ -122,9 +145,23 @@ class _WelcomeHeader extends StatelessWidget {
       ],
     );
   }
+
+  Future<void> _syncQueue(BuildContext context, WidgetRef ref) async {
+    final phase = ref.read(syncControllerProvider).phase;
+    // Not configured or not signed in: the dialog explains and offers sign-in.
+    if (phase == SyncPhase.notConfigured || phase == SyncPhase.signedOut) {
+      await showCloudStatusDialog(context);
+      return;
+    }
+    final message = await ref.read(syncControllerProvider.notifier).syncNow();
+    if (!context.mounted) return;
+    ScaffoldMessenger.of(context)
+      ..hideCurrentSnackBar()
+      ..showSnackBar(SnackBar(content: Text(message)));
+  }
 }
 
-class _StatsGrid extends StatelessWidget {
+class _StatsGrid extends ConsumerWidget {
   const _StatsGrid({required this.width});
 
   final double width;
@@ -132,8 +169,17 @@ class _StatsGrid extends StatelessWidget {
   static const double _gap = 16;
 
   @override
-  Widget build(BuildContext context) {
-    final stats = DashboardSampleData.stats;
+  Widget build(BuildContext context, WidgetRef ref) {
+    final statsAsync = ref.watch(dashboardStatsProvider);
+    final stats = statsAsync.asData?.value;
+    if (stats == null) {
+      return const SizedBox(
+        height: 120,
+        child: Center(child: CircularProgressIndicator()),
+      );
+    }
+
+    final cards = dashboard_stats.buildStatCards(stats);
     final columns = width >= 900 ? 4 : (width >= 520 ? 2 : 1);
 
     if (columns == 4) {
@@ -141,9 +187,9 @@ class _StatsGrid extends StatelessWidget {
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            for (var i = 0; i < stats.length; i++) ...[
+            for (var i = 0; i < cards.length; i++) ...[
               if (i > 0) const SizedBox(width: _gap),
-              Expanded(child: StatCard(data: stats[i])),
+              Expanded(child: StatCard(data: cards[i])),
             ],
           ],
         ),
@@ -155,8 +201,11 @@ class _StatsGrid extends StatelessWidget {
       spacing: _gap,
       runSpacing: _gap,
       children: [
-        for (final stat in stats)
-          SizedBox(width: itemWidth, child: StatCard(data: stat)),
+        for (final card in cards)
+          SizedBox(
+            width: itemWidth,
+            child: StatCard(data: card),
+          ),
       ],
     );
   }

@@ -1,5 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../core/providers.dart';
+import '../../../core/sync/sync_controller.dart';
+import '../../auth/presentation/sign_in_screen.dart';
 import '../../dashboard/presentation/dashboard_screen.dart';
 import '../domain/nav_destination.dart';
 import 'placeholder_screen.dart';
@@ -7,15 +11,40 @@ import 'widgets/app_sidebar.dart';
 import 'widgets/app_top_bar.dart';
 
 /// Top bar + sidebar + the currently selected module.
-class AppShell extends StatefulWidget {
+class AppShell extends ConsumerStatefulWidget {
   const AppShell({super.key});
 
   @override
-  State<AppShell> createState() => _AppShellState();
+  ConsumerState<AppShell> createState() => _AppShellState();
 }
 
-class _AppShellState extends State<AppShell> {
+class _AppShellState extends ConsumerState<AppShell> {
   NavDestination _selected = NavDestination.dashboard;
+
+  @override
+  void initState() {
+    super.initState();
+    // Begin background cloud sync (does nothing when cloud isn't configured).
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) ref.read(syncControllerProvider.notifier).start();
+    });
+  }
+
+  Future<void> _signOut() async {
+    await ref.read(sessionProvider.notifier).signOut();
+    if (!mounted) return;
+    Navigator.of(context).pushAndRemoveUntil(
+      MaterialPageRoute<void>(
+        builder: (_) => SignInScreen(
+          mode: AuthMode.signIn,
+          onSignedIn: (ctx) => Navigator.of(ctx).pushReplacement(
+            MaterialPageRoute<void>(builder: (_) => const AppShell()),
+          ),
+        ),
+      ),
+      (_) => false,
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -25,7 +54,7 @@ class _AppShellState extends State<AppShell> {
           final compact = constraints.maxWidth < 960;
           return Column(
             children: [
-              AppTopBar(compact: compact),
+              AppTopBar(compact: compact, onSignOut: _signOut),
               Expanded(
                 child: Row(
                   children: [

@@ -1,41 +1,59 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_spacing.dart';
 import '../../../core/constants/app_strings.dart';
 import '../../../core/constants/app_text_styles.dart';
+import '../../../core/data/auth_repository.dart';
+import '../../../core/domain/app_exception.dart';
+import '../../../core/providers.dart';
 import '../../splash/presentation/widgets/logo_area.dart';
 import '../../splash/presentation/widgets/splash_background.dart';
-import '../application/auth_service.dart';
 
-class SignInScreen extends StatefulWidget {
-  const SignInScreen({
-    super.key,
-    required this.onSignedIn,
-    this.authService = const TemporaryAuthService(),
-  });
+enum AuthMode {
+  /// Normal staff sign-in.
+  signIn,
 
-  /// Called after a successful sign-in. The caller decides where to go next.
-  final void Function(BuildContext context) onSignedIn;
-  final AuthService authService;
-
-  @override
-  State<SignInScreen> createState() => _SignInScreenState();
+  /// First run: create the administrator account.
+  setup,
 }
 
-class _SignInScreenState extends State<SignInScreen> {
+class SignInScreen extends ConsumerStatefulWidget {
+  const SignInScreen({
+    super.key,
+    required this.mode,
+    required this.onSignedIn,
+  });
+
+  final AuthMode mode;
+
+  /// Called after a successful sign-in or setup.
+  final void Function(BuildContext context) onSignedIn;
+
+  @override
+  ConsumerState<SignInScreen> createState() => _SignInScreenState();
+}
+
+class _SignInScreenState extends ConsumerState<SignInScreen> {
   final _formKey = GlobalKey<FormState>();
+  final _nameController = TextEditingController();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
+  final _confirmController = TextEditingController();
 
   bool _obscurePassword = true;
   bool _loading = false;
   String? _error;
 
+  bool get _isSetup => widget.mode == AuthMode.setup;
+
   @override
   void dispose() {
+    _nameController.dispose();
     _emailController.dispose();
     _passwordController.dispose();
+    _confirmController.dispose();
     super.dispose();
   }
 
@@ -48,19 +66,24 @@ class _SignInScreenState extends State<SignInScreen> {
       _error = null;
     });
 
+    final session = ref.read(sessionProvider.notifier);
     try {
-      await widget.authService.signIn(
-        email: _emailController.text.trim(),
-        password: _passwordController.text,
-      );
+      if (_isSetup) {
+        await session.createFirstAdmin(
+          displayName: _nameController.text,
+          email: _emailController.text,
+          password: _passwordController.text,
+        );
+      } else {
+        await session.signIn(
+          _emailController.text,
+          _passwordController.text,
+        );
+      }
       if (!mounted) return;
       widget.onSignedIn(context);
-    } on AuthException catch (e) {
-      if (mounted) setState(() => _error = e.message);
-    } catch (_) {
-      if (mounted) {
-        setState(() => _error = 'Could not sign in. Please try again.');
-      }
+    } catch (e) {
+      if (mounted) setState(() => _error = friendlyError(e));
     } finally {
       if (mounted) setState(() => _loading = false);
     }
@@ -117,13 +140,31 @@ class _SignInScreenState extends State<SignInScreen> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            const Text('Staff sign in', style: AppTextStyles.pageTitle),
+            Text(
+              _isSetup ? 'Set up this terminal' : 'Staff sign in',
+              style: AppTextStyles.pageTitle,
+            ),
             const SizedBox(height: AppSpacing.xs),
-            const Text(
-              'Reception Console',
+            Text(
+              _isSetup
+                  ? 'Create the administrator account. You can add '
+                      'receptionist accounts afterwards.'
+                  : 'Reception Console',
               style: AppTextStyles.body,
             ),
             const SizedBox(height: AppSpacing.lg),
+            if (_isSetup) ...[
+              TextFormField(
+                controller: _nameController,
+                enabled: !_loading,
+                textInputAction: TextInputAction.next,
+                textCapitalization: TextCapitalization.words,
+                decoration: _decoration('Full name', Icons.person_outline),
+                validator: (v) =>
+                    (v == null || v.trim().isEmpty) ? 'Enter your name.' : null,
+              ),
+              const SizedBox(height: AppSpacing.md),
+            ],
             TextFormField(
               controller: _emailController,
               enabled: !_loading,
@@ -143,9 +184,12 @@ class _SignInScreenState extends State<SignInScreen> {
               controller: _passwordController,
               enabled: !_loading,
               obscureText: _obscurePassword,
-              textInputAction: TextInputAction.done,
+              textInputAction:
+                  _isSetup ? TextInputAction.next : TextInputAction.done,
               autofillHints: const [AutofillHints.password],
-              onFieldSubmitted: (_) => _submit(),
+              onFieldSubmitted: (_) {
+                if (!_isSetup) _submit();
+              },
               decoration: _decoration('Password', Icons.lock_outline).copyWith(
                 suffixIcon: IconButton(
                   tooltip: _obscurePassword ? 'Show password' : 'Hide password',
@@ -159,9 +203,32 @@ class _SignInScreenState extends State<SignInScreen> {
                       setState(() => _obscurePassword = !_obscurePassword),
                 ),
               ),
-              validator: (value) =>
-                  (value == null || value.isEmpty) ? 'Enter your password.' : null,
+              validator: (value) {
+                if (value == null || value.isEmpty) {
+                  return 'Enter your password.';
+                }
+                if (_isSetup && value.length < AuthRepository.minPasswordLength) {
+                  return 'Use at least ${AuthRepository.minPasswordLength} '
+                      'characters.';
+                }
+                return null;
+              },
             ),
+            if (_isSetup) ...[
+              const SizedBox(height: AppSpacing.md),
+              TextFormField(
+                controller: _confirmController,
+                enabled: !_loading,
+                obscureText: _obscurePassword,
+                textInputAction: TextInputAction.done,
+                onFieldSubmitted: (_) => _submit(),
+                decoration:
+                    _decoration('Confirm password', Icons.lock_reset_outlined),
+                validator: (v) => v != _passwordController.text
+                    ? 'Passwords do not match.'
+                    : null,
+              ),
+            ],
             if (_error != null) ...[
               const SizedBox(height: AppSpacing.md),
               Container(
@@ -201,14 +268,7 @@ class _SignInScreenState extends State<SignInScreen> {
                         color: AppColors.white,
                       ),
                     )
-                  : const Text('SIGN IN'),
-            ),
-            const SizedBox(height: AppSpacing.md),
-            const Text(
-              'Temporary sign-in for UI development. Secure staff '
-              'authentication is added in a later step.',
-              textAlign: TextAlign.center,
-              style: AppTextStyles.caption,
+                  : Text(_isSetup ? 'CREATE ACCOUNT' : 'SIGN IN'),
             ),
           ],
         ),
