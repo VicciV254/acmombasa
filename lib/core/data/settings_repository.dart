@@ -5,6 +5,7 @@ import '../database/app_database.dart';
 abstract final class SettingKeys {
   static const sessionStaffId = 'session_staff_id';
   static const capacity = 'capacity';
+  static const monthlyTarget = 'monthly_footfall_target';
   static String syncCursor(String table) => 'sync_cursor_$table';
 }
 
@@ -14,6 +15,7 @@ class SettingsRepository {
   final AppDatabase _db;
 
   static const int defaultCapacity = 45;
+  static const int defaultMonthlyTarget = 1500;
 
   Future<String?> get(String key) async {
     final row = await (_db.select(_db.appSettings)
@@ -37,5 +39,10 @@ class SettingsRepository {
   Future<int> capacity() async {
     final raw = await get(SettingKeys.capacity);
     return int.tryParse(raw ?? '') ?? defaultCapacity;
+  }
+
+  Future<int> monthlyTarget() async {
+    final raw = await get(SettingKeys.monthlyTarget);
+    return int.tryParse(raw ?? '') ?? defaultMonthlyTarget;
   }
 }

@@ -30,6 +30,12 @@ class Visitors extends Table {
       text().withDefault(const Constant('General Visitor'))();
   BoolColumn get isVerified => boolean().withDefault(const Constant(true))();
   BoolColumn get cardIssued => boolean().withDefault(const Constant(false))();
+
+  /// Optional demographics captured at registration (used by Reports).
+  TextColumn get gender => text().nullable()();
+  TextColumn get ageBracket => text().nullable()();
+  TextColumn get residence => text().nullable()();
+  TextColumn get occupation => text().nullable()();
   DateTimeColumn get registeredAt => dateTime()();
   DateTimeColumn get updatedAt => dateTime()();
 
@@ -50,8 +56,45 @@ class Programs extends Table {
   IntColumn get startMinute => integer().nullable()();
   IntColumn get endMinute => integer().nullable()();
   TextColumn get note => text().nullable()();
+
+  /// First (or only) day of the session. Null = legacy daily program.
+  DateTimeColumn get sessionDate => dateTime().nullable()();
+
+  /// 'none' (one-time), 'daily' or 'weekly'.
+  TextColumn get recurrence => text().withDefault(const Constant('daily'))();
+
+  /// Strategic pillar used for ECA reporting.
+  TextColumn get pillar => text().withDefault(const Constant('General Programs'))();
+
+  /// 'in_person', 'hybrid' or 'outreach'.
+  TextColumn get format => text().withDefault(const Constant('in_person'))();
+  IntColumn get capacity => integer().nullable()();
+  TextColumn get facilitator => text().nullable()();
+  BoolColumn get walkInsAllowed => boolean().withDefault(const Constant(true))();
+
+  /// Comma separated audience tags.
+  TextColumn get audience => text().nullable()();
+
+  /// 'draft' or 'published'. Drafts are hidden from check-in.
+  TextColumn get status => text().withDefault(const Constant('published'))();
   BoolColumn get isActive => boolean().withDefault(const Constant(true))();
   IntColumn get sortOrder => integer().withDefault(const Constant(0))();
+  DateTimeColumn get updatedAt => dateTime()();
+  BoolColumn get dirty => boolean().withDefault(const Constant(true))();
+
+  @override
+  Set<Column> get primaryKey => {id};
+}
+
+/// Pre-registration of a visitor for a program on a given day. Synced.
+class ProgramRegistrations extends Table {
+  TextColumn get id => text()();
+  TextColumn get programId => text()();
+  TextColumn get visitorId => text()();
+
+  /// Midnight of the session day.
+  DateTimeColumn get sessionDay => dateTime()();
+  DateTimeColumn get createdAt => dateTime()();
   DateTimeColumn get updatedAt => dateTime()();
   BoolColumn get dirty => boolean().withDefault(const Constant(true))();
 

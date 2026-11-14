@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
@@ -29,33 +30,56 @@ class SplashScreen extends ConsumerStatefulWidget {
 }
 
 class _SplashScreenState extends ConsumerState<SplashScreen> {
+  static const _minimumSplashDuration = Duration(seconds: 8);
+
   late final SplashController _controller;
+  late final Stopwatch _stopwatch;
+  Timer? _navigationTimer;
+  bool _hasNavigated = false;
 
   @override
   void initState() {
     super.initState();
+    _stopwatch = Stopwatch()..start();
     _controller = SplashController(initializer: AppInitializer(ref))
       ..addListener(_onChanged);
     _controller.start();
   }
 
   void _onChanged() {
-    if (_controller.status == SplashStatus.ready && mounted) {
-      final destination = _controller.destination!;
-      Navigator.of(context).pushReplacement(
-        PageRouteBuilder<void>(
-          transitionDuration: const Duration(milliseconds: 300),
-          pageBuilder: (context, _, __) =>
-              widget.destinationBuilder(context, destination),
-          transitionsBuilder: (_, animation, __, child) =>
-              FadeTransition(opacity: animation, child: child),
-        ),
-      );
+    if (_controller.status != SplashStatus.ready ||
+        !mounted ||
+        _hasNavigated ||
+        _navigationTimer != null) {
+      return;
     }
+
+    final remaining = _minimumSplashDuration - _stopwatch.elapsed;
+    if (remaining > Duration.zero) {
+      _navigationTimer = Timer(remaining, _navigateToDestination);
+    } else {
+      _navigateToDestination();
+    }
+  }
+
+  void _navigateToDestination() {
+    if (!mounted || _hasNavigated) return;
+    _hasNavigated = true;
+    final destination = _controller.destination!;
+    Navigator.of(context).pushReplacement(
+      PageRouteBuilder<void>(
+        transitionDuration: const Duration(milliseconds: 300),
+        pageBuilder: (context, _, __) =>
+            widget.destinationBuilder(context, destination),
+        transitionsBuilder: (_, animation, __, child) =>
+            FadeTransition(opacity: animation, child: child),
+      ),
+    );
   }
 
   @override
   void dispose() {
+    _navigationTimer?.cancel();
     _controller
       ..removeListener(_onChanged)
       ..dispose();

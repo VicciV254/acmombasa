@@ -61,6 +61,10 @@ class SyncService {
     var total = 0;
     total += await _count(_db.visitors, _db.visitors.dirty);
     total += await _count(_db.programs, _db.programs.dirty);
+    total += await _count(
+      _db.programRegistrations,
+      _db.programRegistrations.dirty,
+    );
     total += await _count(_db.visits, _db.visits.dirty);
     return total;
   }
@@ -99,6 +103,7 @@ class SyncService {
     var total = 0;
     total += await _pushVisitors();
     total += await _pushPrograms();
+    total += await _pushRegistrations();
     total += await _pushVisits();
     return total;
   }
@@ -118,6 +123,10 @@ class SyncService {
           'category': r.category,
           'is_verified': r.isVerified,
           'card_issued': r.cardIssued,
+          'gender': r.gender,
+          'age_bracket': r.ageBracket,
+          'residence': r.residence,
+          'occupation': r.occupation,
           'registered_at': _utc(r.registeredAt),
           'updated_at': _utc(r.updatedAt),
         },
@@ -143,6 +152,15 @@ class SyncService {
           'start_minute': r.startMinute,
           'end_minute': r.endMinute,
           'note': r.note,
+          'session_date': r.sessionDate == null ? null : _utc(r.sessionDate!),
+          'recurrence': r.recurrence,
+          'pillar': r.pillar,
+          'format': r.format,
+          'capacity': r.capacity,
+          'facilitator': r.facilitator,
+          'walk_ins_allowed': r.walkInsAllowed,
+          'audience': r.audience,
+          'status': r.status,
           'is_active': r.isActive,
           'sort_order': r.sortOrder,
           'updated_at': _utc(r.updatedAt),
@@ -152,6 +170,30 @@ class SyncService {
       await (_db.update(_db.programs)
             ..where((t) => t.id.equals(r.id) & t.updatedAt.equals(r.updatedAt)))
           .write(const ProgramsCompanion(dirty: Value(false)));
+    }
+    return rows.length;
+  }
+
+  Future<int> _pushRegistrations() async {
+    final rows = await (_db.select(_db.registrations)
+          ..where((t) => t.dirty.equals(true)))
+        .get();
+    if (rows.isEmpty) return 0;
+    await _upsertInChunks('program_registrations', [
+      for (final r in rows)
+        {
+          'id': r.id,
+          'program_id': r.programId,
+          'visitor_id': r.visitorId,
+          'session_day': _utc(r.sessionDay),
+          'created_at': _utc(r.createdAt),
+          'updated_at': _utc(r.updatedAt),
+        },
+    ]);
+    for (final r in rows) {
+      await (_db.update(_db.registrations)
+            ..where((t) => t.id.equals(r.id) & t.updatedAt.equals(r.updatedAt)))
+          .write(const RegistrationsCompanion(dirty: Value(false)));
     }
     return rows.length;
   }
@@ -199,6 +241,7 @@ class SyncService {
     var total = 0;
     total += await _pull('visitors', _mergeVisitor);
     total += await _pull('programs', _mergeProgram);
+    total += await _pull('program_registrations', _mergeRegistration);
     total += await _pull('visits', _mergeVisit);
     return total;
   }
@@ -250,6 +293,10 @@ class SyncService {
             category: Value((m['category'] as String?) ?? 'General Visitor'),
             isVerified: Value((m['is_verified'] as bool?) ?? true),
             cardIssued: Value((m['card_issued'] as bool?) ?? false),
+            gender: Value(m['gender'] as String?),
+            ageBracket: Value(m['age_bracket'] as String?),
+            residence: Value(m['residence'] as String?),
+            occupation: Value(m['occupation'] as String?),
             registeredAt: Value(_local(m['registered_at'])),
             updatedAt: Value(remoteUpdated),
             dirty: const Value(false),
@@ -273,8 +320,41 @@ class SyncService {
             startMinute: Value(m['start_minute'] as int?),
             endMinute: Value(m['end_minute'] as int?),
             note: Value(m['note'] as String?),
+            sessionDate: Value(
+              m['session_date'] == null ? null : _local(m['session_date']),
+            ),
+            recurrence: Value((m['recurrence'] as String?) ?? 'daily'),
+            pillar: Value((m['pillar'] as String?) ?? 'General Programs'),
+            format: Value((m['format'] as String?) ?? 'in_person'),
+            capacity: Value(m['capacity'] as int?),
+            facilitator: Value(m['facilitator'] as String?),
+            walkInsAllowed: Value((m['walk_ins_allowed'] as bool?) ?? true),
+            audience: Value(m['audience'] as String?),
+            status: Value((m['status'] as String?) ?? 'published'),
             isActive: Value((m['is_active'] as bool?) ?? true),
             sortOrder: Value((m['sort_order'] as int?) ?? 0),
+            updatedAt: Value(remoteUpdated),
+            dirty: const Value(false),
+          ),
+        );
+  }
+
+  Future<void> _mergeRegistration(Map<String, dynamic> m) async {
+    final id = m['id'] as String;
+    final remoteUpdated = _local(m['updated_at']);
+    final local = await (_db.select(_db.registrations)
+          ..where((t) => t.id.equals(id)))
+        .getSingleOrNull();
+    if (local != null && local.dirty && local.updatedAt.isAfter(remoteUpdated)) {
+      return;
+    }
+    await _db.into(_db.registrations).insertOnConflictUpdate(
+          ProgramRegistrationsCompanion(
+            id: Value(id),
+            programId: Value(m['program_id'] as String),
+            visitorId: Value(m['visitor_id'] as String),
+            sessionDay: Value(_local(m['session_day'])),
+            createdAt: Value(_local(m['created_at'])),
             updatedAt: Value(remoteUpdated),
             dirty: const Value(false),
           ),

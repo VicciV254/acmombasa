@@ -2,6 +2,7 @@ import 'package:drift/drift.dart';
 
 import '../database/app_database.dart';
 import '../domain/models.dart';
+import '../domain/program_models.dart';
 import '../utils/id_generator.dart';
 
 class ProgramRepository {
@@ -44,10 +45,20 @@ class ProgramRepository {
     });
   }
 
-  Future<List<Program>> activePrograms() {
-    return (_db.select(_db.programs)
-          ..where((p) => p.isActive.equals(true))
+  /// Published programs that run today (what check-in offers).
+  Future<List<Program>> activePrograms() async {
+    final today = startOfDay(DateTime.now());
+    final all = await (_db.select(_db.programs)
+          ..where((p) => p.isActive.equals(true) & p.status.equals('published'))
           ..orderBy([(p) => OrderingTerm.asc(p.sortOrder)]))
+        .get();
+    return all.where((p) => ProgramSchedule.occursOn(p, today)).toList();
+  }
+
+  /// Every program ever created, including past one-off sessions.
+  Future<List<Program>> allPrograms() {
+    return (_db.select(_db.programs)
+          ..orderBy([(p) => OrderingTerm.asc(p.name)]))
         .get();
   }
 

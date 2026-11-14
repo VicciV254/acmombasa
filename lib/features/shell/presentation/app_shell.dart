@@ -4,6 +4,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/providers.dart';
 import '../../../core/sync/sync_controller.dart';
 import '../../auth/presentation/sign_in_screen.dart';
+import '../../directory/presentation/visitors_directory_screen.dart';
+import '../../history/presentation/visit_history_screen.dart';
+import '../../programs/presentation/programs_screen.dart';
+import '../../reports/presentation/reports_screen.dart';
 import '../../dashboard/presentation/dashboard_screen.dart';
 import '../domain/nav_destination.dart';
 import 'placeholder_screen.dart';
@@ -78,6 +82,10 @@ class _AppShellState extends ConsumerState<AppShell> {
     if (_selected.isImplemented) {
       return switch (_selected) {
         NavDestination.dashboard => const DashboardScreen(),
+        NavDestination.visitorsDirectory => const VisitorsDirectoryScreen(),
+        NavDestination.visitHistory => const VisitHistoryScreen(),
+        NavDestination.programsAndActivities => const ProgramsScreen(),
+        NavDestination.reports => const ReportsScreen(),
         _ => const SizedBox.shrink(),
       };
     }

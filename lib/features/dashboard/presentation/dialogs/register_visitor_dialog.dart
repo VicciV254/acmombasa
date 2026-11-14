@@ -88,6 +88,16 @@ class _RegisterVisitorDialogState
     final looksLikePhone = RegExp(r'^[\d\s+()\-]{6,}$').hasMatch(q);
     _name = TextEditingController(text: looksLikePhone ? '' : q);
     _phone = TextEditingController(text: looksLikePhone ? _localDigits(q) : '');
+    _loadReference();
+  }
+
+  Future<void> _loadReference() async {
+    try {
+      final id = await ref.read(visitorRepositoryProvider).previewNextMemberId();
+      if (mounted) setState(() => _reference = id);
+    } catch (_) {
+      // Display only; the real ID is assigned on save.
+    }
   }
 
   @override
@@ -121,8 +131,7 @@ class _RegisterVisitorDialogState
       _error = null;
     });
 
-    final options =
-        ref.read(purposeOptionsProvider).asData?.value ??
+    final options = ref.read(purposeOptionsProvider).asData?.value ??
         const [PurposeOption.general];
     final option = _selectedOption(options);
     final formOk = _formKey.currentState?.validate() ?? false;
@@ -132,12 +141,14 @@ class _RegisterVisitorDialogState
 
     final Visitor visitor;
     try {
-      visitor = await ref
-          .read(visitorRepositoryProvider)
-          .register(
+      visitor = await ref.read(visitorRepositoryProvider).register(
             fullName: _name.text,
             phone: '+254${_localDigits(_phone.text)}',
             email: _email.text,
+            gender: _gender,
+            ageBracket: _age,
+            residence: _area,
+            occupation: _occupation.text,
           );
     } catch (e) {
       if (mounted) {
@@ -155,9 +166,7 @@ class _RegisterVisitorDialogState
       if (staff == null) {
         throw const AppException('Sign in again to check the visitor in.');
       }
-      await ref
-          .read(visitRepositoryProvider)
-          .checkIn(
+      await ref.read(visitRepositoryProvider).checkIn(
             visitor: visitor,
             staffId: staff.id,
             purpose: option.label,
@@ -179,9 +188,11 @@ class _RegisterVisitorDialogState
 
   @override
   Widget build(BuildContext context) {
-    final options =
-        ref.watch(purposeOptionsProvider).asData?.value ??
-        const [PurposeOption.general];
+    final options = ref.watch(purposeOptionsProvider).when(
+        data: (options) => options,
+        loading: () => const [PurposeOption.general],
+        error: (_, __) => const [PurposeOption.general],
+      );
 
     return CallbackShortcuts(
       bindings: {
@@ -208,8 +219,10 @@ class _RegisterVisitorDialogState
                 child: SingleChildScrollView(
                   padding: const EdgeInsets.fromLTRB(24, 18, 24, 12),
                   child: LayoutBuilder(
-                    builder: (context, constraints) =>
-                        _buildForm(options, wide: constraints.maxWidth >= 520),
+                    builder: (context, constraints) => _buildForm(
+                      options,
+                      wide: constraints.maxWidth >= 520,
+                    ),
                   ),
                 ),
               ),
@@ -234,11 +247,8 @@ class _RegisterVisitorDialogState
               color: AppColors.infoSoft,
               borderRadius: BorderRadius.circular(12),
             ),
-            child: const Icon(
-              Icons.person_add_alt_1_outlined,
-              color: AppColors.brightBlue,
-              size: 22,
-            ),
+            child: const Icon(Icons.person_add_alt_1_outlined,
+                color: AppColors.brightBlue, size: 22),
           ),
           const SizedBox(width: 14),
           Expanded(
@@ -250,10 +260,8 @@ class _RegisterVisitorDialogState
                   runSpacing: 4,
                   crossAxisAlignment: WrapCrossAlignment.center,
                   children: [
-                    Text(
-                      'Register New Visitor',
-                      style: AppTextStyles.cardTitle.copyWith(fontSize: 18),
-                    ),
+                    Text('Register New Visitor',
+                        style: AppTextStyles.cardTitle.copyWith(fontSize: 18)),
                     const Pill(
                       label: 'NEW PROFILE',
                       background: AppColors.infoSoft,
@@ -304,21 +312,16 @@ class _RegisterVisitorDialogState
               color: AppColors.infoSoft,
               borderRadius: BorderRadius.circular(8),
             ),
-            child: const Icon(
-              Icons.badge_outlined,
-              size: 18,
-              color: AppColors.brightBlue,
-            ),
+            child: const Icon(Icons.badge_outlined,
+                size: 18, color: AppColors.brightBlue),
           ),
           const SizedBox(width: 12),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text(
-                  'ASSIGNED VISITOR REFERENCE',
-                  style: AppTextStyles.label,
-                ),
+                const Text('ASSIGNED VISITOR REFERENCE',
+                    style: AppTextStyles.label),
                 const SizedBox(height: 2),
                 Wrap(
                   spacing: 10,
@@ -375,10 +378,8 @@ class _RegisterVisitorDialogState
                 autofocus: true,
                 textCapitalization: TextCapitalization.words,
                 style: AppTextStyles.bodyStrong,
-                decoration: _decoration(
-                  'e.g., Juma Bakari Khamis',
-                  icon: Icons.badge_outlined,
-                ),
+                decoration: _decoration('e.g., Juma Bakari Khamis',
+                    icon: Icons.badge_outlined),
                 validator: (v) => (v == null || v.trim().length < 2)
                     ? 'Enter the visitor\'s full name.'
                     : null,
@@ -475,10 +476,8 @@ class _RegisterVisitorDialogState
                 controller: _email,
                 keyboardType: TextInputType.emailAddress,
                 style: AppTextStyles.bodyStrong,
-                decoration: _decoration(
-                  'juma.bakari@example.com',
-                  icon: Icons.mail_outline,
-                ),
+                decoration: _decoration('juma.bakari@example.com',
+                    icon: Icons.mail_outline),
               ),
             ),
             _labeled(
@@ -548,11 +547,8 @@ class _RegisterVisitorDialogState
               ),
               child: Row(
                 children: [
-                  const Icon(
-                    Icons.error_outline,
-                    size: 18,
-                    color: AppColors.americanRed,
-                  ),
+                  const Icon(Icons.error_outline,
+                      size: 18, color: AppColors.americanRed),
                   const SizedBox(width: 8),
                   Expanded(
                     child: Text(
@@ -765,9 +761,8 @@ class _RegisterVisitorDialogState
                   style: AppTextStyles.caption.copyWith(
                     fontSize: 10.5,
                     color: hintColor ?? AppColors.textMuted,
-                    fontWeight: hintColor == null
-                        ? FontWeight.w400
-                        : FontWeight.w600,
+                    fontWeight:
+                        hintColor == null ? FontWeight.w400 : FontWeight.w600,
                   ),
                 ),
               ),
@@ -777,30 +772,25 @@ class _RegisterVisitorDialogState
         child,
         if (error != null) ...[
           const SizedBox(height: 4),
-          Text(
-            error,
-            style: const TextStyle(
-              color: AppColors.americanRed,
-              fontSize: 11.5,
-            ),
-          ),
+          Text(error,
+              style: const TextStyle(
+                  color: AppColors.americanRed, fontSize: 11.5)),
         ],
       ],
     );
   }
 
   OutlineInputBorder _outline(Color color) => OutlineInputBorder(
-    borderRadius: BorderRadius.circular(10),
-    borderSide: BorderSide(color: color),
-  );
+        borderRadius: BorderRadius.circular(10),
+        borderSide: BorderSide(color: color),
+      );
 
   InputDecoration _decoration(String hint, {IconData? icon}) {
     return InputDecoration(
       hintText: hint,
       hintStyle: const TextStyle(color: AppColors.textFaint, fontSize: 13),
-      prefixIcon: icon == null
-          ? null
-          : Icon(icon, size: 18, color: AppColors.textFaint),
+      prefixIcon:
+          icon == null ? null : Icon(icon, size: 18, color: AppColors.textFaint),
       filled: true,
       fillColor: _fill,
       isDense: true,

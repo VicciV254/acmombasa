@@ -12,9 +12,8 @@ class VisitorRepository {
   final AppDatabase _db;
 
   Future<Visitor?> getById(String id) {
-    return (_db.select(
-      _db.visitors,
-    )..where((v) => v.id.equals(id))).getSingleOrNull();
+    return (_db.select(_db.visitors)..where((v) => v.id.equals(id)))
+        .getSingleOrNull();
   }
 
   /// Name, member ID or phone number (any format).
@@ -22,8 +21,8 @@ class VisitorRepository {
     final q = query.trim().replaceAll(RegExp(r'[%_]'), '');
     if (q.isEmpty) return const [];
     final phoneFragment = PhoneUtils.searchFragment(q);
-    final looksLikePhone =
-        phoneFragment.length >= 3 && RegExp(r'^[\d\s+()\-]+$').hasMatch(q);
+    final looksLikePhone = phoneFragment.length >= 3 &&
+        RegExp(r'^[\d\s+()\-]+$').hasMatch(q);
 
     return (_db.select(_db.visitors)
           ..where((v) {
@@ -44,11 +43,10 @@ class VisitorRepository {
     final text = input.trim();
     if (text.isEmpty) return null;
 
-    final byId =
-        await (_db.select(_db.visitors)
-              ..where((v) => v.memberId.lower().equals(text.toLowerCase()))
-              ..limit(1))
-            .getSingleOrNull();
+    final byId = await (_db.select(_db.visitors)
+          ..where((v) => v.memberId.lower().equals(text.toLowerCase()))
+          ..limit(1))
+        .getSingleOrNull();
     if (byId != null) return byId;
 
     final phone = PhoneUtils.normalize(text);
@@ -65,6 +63,10 @@ class VisitorRepository {
     String? email,
     String category = 'General Visitor',
     bool cardIssued = false,
+    String? gender,
+    String? ageBracket,
+    String? residence,
+    String? occupation,
   }) async {
     final name = fullName.trim().replaceAll(RegExp(r'\s+'), ' ');
     if (name.length < 2) throw const AppException('Enter the visitor\'s name.');
@@ -78,17 +80,14 @@ class VisitorRepository {
     if (cleanEmail != null &&
         cleanEmail.isNotEmpty &&
         !RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]+$').hasMatch(cleanEmail)) {
-      throw const AppException(
-        'Enter a valid email address or leave it blank.',
-      );
+      throw const AppException('Enter a valid email address or leave it blank.');
     }
 
     return _db.transaction(() async {
-      final duplicate =
-          await (_db.select(_db.visitors)
-                ..where((v) => v.phone.equals(normalizedPhone))
-                ..limit(1))
-              .getSingleOrNull();
+      final duplicate = await (_db.select(_db.visitors)
+            ..where((v) => v.phone.equals(normalizedPhone))
+            ..limit(1))
+          .getSingleOrNull();
       if (duplicate != null) {
         throw AppException(
           'This phone number is already registered to ${duplicate.fullName} '
@@ -98,9 +97,7 @@ class VisitorRepository {
 
       final now = DateTime.now();
       final id = newId();
-      await _db
-          .into(_db.visitors)
-          .insert(
+      await _db.into(_db.visitors).insert(
             VisitorsCompanion.insert(
               id: id,
               memberId: await _nextMemberId(now),
@@ -113,11 +110,14 @@ class VisitorRepository {
               ),
               category: Value(category),
               cardIssued: Value(cardIssued),
+              gender: Value(_clean(gender)),
+              ageBracket: Value(_clean(ageBracket)),
+              residence: Value(_clean(residence)),
+              occupation: Value(_clean(occupation)),
             ),
           );
-      return (_db.select(
-        _db.visitors,
-      )..where((v) => v.id.equals(id))).getSingle();
+      return (_db.select(_db.visitors)..where((v) => v.id.equals(id)))
+          .getSingle();
     });
   }
 
@@ -125,11 +125,10 @@ class VisitorRepository {
     final visitor = await getById(visitorId);
     if (visitor == null) return null;
 
-    final visits =
-        await (_db.select(_db.visits)
-              ..where((v) => v.visitorId.equals(visitorId))
-              ..orderBy([(v) => OrderingTerm.desc(v.checkInAt)]))
-            .get();
+    final visits = await (_db.select(_db.visits)
+          ..where((v) => v.visitorId.equals(visitorId))
+          ..orderBy([(v) => OrderingTerm.desc(v.checkInAt)]))
+        .get();
 
     final start = startOfDay(DateTime.now());
     final today = visits.where((v) => !v.checkInAt.isBefore(start)).toList();
@@ -159,9 +158,9 @@ class VisitorRepository {
   /// "ACM-2026-0001". Sequence restarts each year; collisions are skipped.
   Future<String> _nextMemberId(DateTime now) async {
     final prefix = 'ACM-${now.year}-';
-    final existing = await (_db.select(
-      _db.visitors,
-    )..where((v) => v.memberId.like('$prefix%'))).get();
+    final existing = await (_db.select(_db.visitors)
+          ..where((v) => v.memberId.like('$prefix%')))
+        .get();
     var next = existing.length + 1;
     final taken = existing.map((v) => v.memberId).toSet();
     String candidate;
@@ -170,5 +169,10 @@ class VisitorRepository {
       next++;
     } while (taken.contains(candidate));
     return candidate;
+  }
+
+  static String? _clean(String? v) {
+    final t = v?.trim();
+    return (t == null || t.isEmpty) ? null : t;
   }
 }

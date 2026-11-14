@@ -25,6 +25,13 @@ abstract final class DateFormatter {
     'December',
   ];
 
+  static String weekdayShort(DateTime d) => _weekdays[d.weekday - 1].substring(0, 3);
+
+  static String monthShort(DateTime d) => _months[d.month - 1].substring(0, 3);
+
+  /// e.g. "October 2024"
+  static String monthYear(DateTime d) => '${_months[d.month - 1]} ${d.year}';
+
   /// e.g. "Thursday, October 24, 2024"
   static String fullDate(DateTime d) =>
       '${_weekdays[d.weekday - 1]}, ${_months[d.month - 1]} ${d.day}, ${d.year}';
