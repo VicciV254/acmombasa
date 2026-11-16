@@ -624,6 +624,48 @@ class $VisitorsTable extends Visitors with TableInfo<$VisitorsTable, Visitor> {
     ),
     defaultValue: const Constant(false),
   );
+  static const VerificationMeta _genderMeta = const VerificationMeta('gender');
+  @override
+  late final GeneratedColumn<String> gender = GeneratedColumn<String>(
+    'gender',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _ageBracketMeta = const VerificationMeta(
+    'ageBracket',
+  );
+  @override
+  late final GeneratedColumn<String> ageBracket = GeneratedColumn<String>(
+    'age_bracket',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _residenceMeta = const VerificationMeta(
+    'residence',
+  );
+  @override
+  late final GeneratedColumn<String> residence = GeneratedColumn<String>(
+    'residence',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _occupationMeta = const VerificationMeta(
+    'occupation',
+  );
+  @override
+  late final GeneratedColumn<String> occupation = GeneratedColumn<String>(
+    'occupation',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
   static const VerificationMeta _registeredAtMeta = const VerificationMeta(
     'registeredAt',
   );
@@ -669,6 +711,10 @@ class $VisitorsTable extends Visitors with TableInfo<$VisitorsTable, Visitor> {
     category,
     isVerified,
     cardIssued,
+    gender,
+    ageBracket,
+    residence,
+    occupation,
     registeredAt,
     updatedAt,
     dirty,
@@ -738,6 +784,30 @@ class $VisitorsTable extends Visitors with TableInfo<$VisitorsTable, Visitor> {
         cardIssued.isAcceptableOrUnknown(data['card_issued']!, _cardIssuedMeta),
       );
     }
+    if (data.containsKey('gender')) {
+      context.handle(
+        _genderMeta,
+        gender.isAcceptableOrUnknown(data['gender']!, _genderMeta),
+      );
+    }
+    if (data.containsKey('age_bracket')) {
+      context.handle(
+        _ageBracketMeta,
+        ageBracket.isAcceptableOrUnknown(data['age_bracket']!, _ageBracketMeta),
+      );
+    }
+    if (data.containsKey('residence')) {
+      context.handle(
+        _residenceMeta,
+        residence.isAcceptableOrUnknown(data['residence']!, _residenceMeta),
+      );
+    }
+    if (data.containsKey('occupation')) {
+      context.handle(
+        _occupationMeta,
+        occupation.isAcceptableOrUnknown(data['occupation']!, _occupationMeta),
+      );
+    }
     if (data.containsKey('registered_at')) {
       context.handle(
         _registeredAtMeta,
@@ -804,6 +874,22 @@ class $VisitorsTable extends Visitors with TableInfo<$VisitorsTable, Visitor> {
         DriftSqlType.bool,
         data['${effectivePrefix}card_issued'],
       )!,
+      gender: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}gender'],
+      ),
+      ageBracket: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}age_bracket'],
+      ),
+      residence: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}residence'],
+      ),
+      occupation: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}occupation'],
+      ),
       registeredAt: attachedDatabase.typeMapping.read(
         DriftSqlType.dateTime,
         data['${effectivePrefix}registered_at'],
@@ -836,6 +922,12 @@ class Visitor extends DataClass implements Insertable<Visitor> {
   final String category;
   final bool isVerified;
   final bool cardIssued;
+
+  /// Optional demographics captured at registration (used by Reports).
+  final String? gender;
+  final String? ageBracket;
+  final String? residence;
+  final String? occupation;
   final DateTime registeredAt;
   final DateTime updatedAt;
 
@@ -850,6 +942,10 @@ class Visitor extends DataClass implements Insertable<Visitor> {
     required this.category,
     required this.isVerified,
     required this.cardIssued,
+    this.gender,
+    this.ageBracket,
+    this.residence,
+    this.occupation,
     required this.registeredAt,
     required this.updatedAt,
     required this.dirty,
@@ -867,6 +963,18 @@ class Visitor extends DataClass implements Insertable<Visitor> {
     map['category'] = Variable<String>(category);
     map['is_verified'] = Variable<bool>(isVerified);
     map['card_issued'] = Variable<bool>(cardIssued);
+    if (!nullToAbsent || gender != null) {
+      map['gender'] = Variable<String>(gender);
+    }
+    if (!nullToAbsent || ageBracket != null) {
+      map['age_bracket'] = Variable<String>(ageBracket);
+    }
+    if (!nullToAbsent || residence != null) {
+      map['residence'] = Variable<String>(residence);
+    }
+    if (!nullToAbsent || occupation != null) {
+      map['occupation'] = Variable<String>(occupation);
+    }
     map['registered_at'] = Variable<DateTime>(registeredAt);
     map['updated_at'] = Variable<DateTime>(updatedAt);
     map['dirty'] = Variable<bool>(dirty);
@@ -885,6 +993,18 @@ class Visitor extends DataClass implements Insertable<Visitor> {
       category: Value(category),
       isVerified: Value(isVerified),
       cardIssued: Value(cardIssued),
+      gender: gender == null && nullToAbsent
+          ? const Value.absent()
+          : Value(gender),
+      ageBracket: ageBracket == null && nullToAbsent
+          ? const Value.absent()
+          : Value(ageBracket),
+      residence: residence == null && nullToAbsent
+          ? const Value.absent()
+          : Value(residence),
+      occupation: occupation == null && nullToAbsent
+          ? const Value.absent()
+          : Value(occupation),
       registeredAt: Value(registeredAt),
       updatedAt: Value(updatedAt),
       dirty: Value(dirty),
@@ -905,6 +1025,10 @@ class Visitor extends DataClass implements Insertable<Visitor> {
       category: serializer.fromJson<String>(json['category']),
       isVerified: serializer.fromJson<bool>(json['isVerified']),
       cardIssued: serializer.fromJson<bool>(json['cardIssued']),
+      gender: serializer.fromJson<String?>(json['gender']),
+      ageBracket: serializer.fromJson<String?>(json['ageBracket']),
+      residence: serializer.fromJson<String?>(json['residence']),
+      occupation: serializer.fromJson<String?>(json['occupation']),
       registeredAt: serializer.fromJson<DateTime>(json['registeredAt']),
       updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
       dirty: serializer.fromJson<bool>(json['dirty']),
@@ -922,6 +1046,10 @@ class Visitor extends DataClass implements Insertable<Visitor> {
       'category': serializer.toJson<String>(category),
       'isVerified': serializer.toJson<bool>(isVerified),
       'cardIssued': serializer.toJson<bool>(cardIssued),
+      'gender': serializer.toJson<String?>(gender),
+      'ageBracket': serializer.toJson<String?>(ageBracket),
+      'residence': serializer.toJson<String?>(residence),
+      'occupation': serializer.toJson<String?>(occupation),
       'registeredAt': serializer.toJson<DateTime>(registeredAt),
       'updatedAt': serializer.toJson<DateTime>(updatedAt),
       'dirty': serializer.toJson<bool>(dirty),
@@ -937,6 +1065,10 @@ class Visitor extends DataClass implements Insertable<Visitor> {
     String? category,
     bool? isVerified,
     bool? cardIssued,
+    Value<String?> gender = const Value.absent(),
+    Value<String?> ageBracket = const Value.absent(),
+    Value<String?> residence = const Value.absent(),
+    Value<String?> occupation = const Value.absent(),
     DateTime? registeredAt,
     DateTime? updatedAt,
     bool? dirty,
@@ -949,6 +1081,10 @@ class Visitor extends DataClass implements Insertable<Visitor> {
     category: category ?? this.category,
     isVerified: isVerified ?? this.isVerified,
     cardIssued: cardIssued ?? this.cardIssued,
+    gender: gender.present ? gender.value : this.gender,
+    ageBracket: ageBracket.present ? ageBracket.value : this.ageBracket,
+    residence: residence.present ? residence.value : this.residence,
+    occupation: occupation.present ? occupation.value : this.occupation,
     registeredAt: registeredAt ?? this.registeredAt,
     updatedAt: updatedAt ?? this.updatedAt,
     dirty: dirty ?? this.dirty,
@@ -967,6 +1103,14 @@ class Visitor extends DataClass implements Insertable<Visitor> {
       cardIssued: data.cardIssued.present
           ? data.cardIssued.value
           : this.cardIssued,
+      gender: data.gender.present ? data.gender.value : this.gender,
+      ageBracket: data.ageBracket.present
+          ? data.ageBracket.value
+          : this.ageBracket,
+      residence: data.residence.present ? data.residence.value : this.residence,
+      occupation: data.occupation.present
+          ? data.occupation.value
+          : this.occupation,
       registeredAt: data.registeredAt.present
           ? data.registeredAt.value
           : this.registeredAt,
@@ -986,6 +1130,10 @@ class Visitor extends DataClass implements Insertable<Visitor> {
           ..write('category: $category, ')
           ..write('isVerified: $isVerified, ')
           ..write('cardIssued: $cardIssued, ')
+          ..write('gender: $gender, ')
+          ..write('ageBracket: $ageBracket, ')
+          ..write('residence: $residence, ')
+          ..write('occupation: $occupation, ')
           ..write('registeredAt: $registeredAt, ')
           ..write('updatedAt: $updatedAt, ')
           ..write('dirty: $dirty')
@@ -1003,6 +1151,10 @@ class Visitor extends DataClass implements Insertable<Visitor> {
     category,
     isVerified,
     cardIssued,
+    gender,
+    ageBracket,
+    residence,
+    occupation,
     registeredAt,
     updatedAt,
     dirty,
@@ -1019,6 +1171,10 @@ class Visitor extends DataClass implements Insertable<Visitor> {
           other.category == this.category &&
           other.isVerified == this.isVerified &&
           other.cardIssued == this.cardIssued &&
+          other.gender == this.gender &&
+          other.ageBracket == this.ageBracket &&
+          other.residence == this.residence &&
+          other.occupation == this.occupation &&
           other.registeredAt == this.registeredAt &&
           other.updatedAt == this.updatedAt &&
           other.dirty == this.dirty);
@@ -1033,6 +1189,10 @@ class VisitorsCompanion extends UpdateCompanion<Visitor> {
   final Value<String> category;
   final Value<bool> isVerified;
   final Value<bool> cardIssued;
+  final Value<String?> gender;
+  final Value<String?> ageBracket;
+  final Value<String?> residence;
+  final Value<String?> occupation;
   final Value<DateTime> registeredAt;
   final Value<DateTime> updatedAt;
   final Value<bool> dirty;
@@ -1046,6 +1206,10 @@ class VisitorsCompanion extends UpdateCompanion<Visitor> {
     this.category = const Value.absent(),
     this.isVerified = const Value.absent(),
     this.cardIssued = const Value.absent(),
+    this.gender = const Value.absent(),
+    this.ageBracket = const Value.absent(),
+    this.residence = const Value.absent(),
+    this.occupation = const Value.absent(),
     this.registeredAt = const Value.absent(),
     this.updatedAt = const Value.absent(),
     this.dirty = const Value.absent(),
@@ -1060,6 +1224,10 @@ class VisitorsCompanion extends UpdateCompanion<Visitor> {
     this.category = const Value.absent(),
     this.isVerified = const Value.absent(),
     this.cardIssued = const Value.absent(),
+    this.gender = const Value.absent(),
+    this.ageBracket = const Value.absent(),
+    this.residence = const Value.absent(),
+    this.occupation = const Value.absent(),
     required DateTime registeredAt,
     required DateTime updatedAt,
     this.dirty = const Value.absent(),
@@ -1079,6 +1247,10 @@ class VisitorsCompanion extends UpdateCompanion<Visitor> {
     Expression<String>? category,
     Expression<bool>? isVerified,
     Expression<bool>? cardIssued,
+    Expression<String>? gender,
+    Expression<String>? ageBracket,
+    Expression<String>? residence,
+    Expression<String>? occupation,
     Expression<DateTime>? registeredAt,
     Expression<DateTime>? updatedAt,
     Expression<bool>? dirty,
@@ -1093,6 +1265,10 @@ class VisitorsCompanion extends UpdateCompanion<Visitor> {
       if (category != null) 'category': category,
       if (isVerified != null) 'is_verified': isVerified,
       if (cardIssued != null) 'card_issued': cardIssued,
+      if (gender != null) 'gender': gender,
+      if (ageBracket != null) 'age_bracket': ageBracket,
+      if (residence != null) 'residence': residence,
+      if (occupation != null) 'occupation': occupation,
       if (registeredAt != null) 'registered_at': registeredAt,
       if (updatedAt != null) 'updated_at': updatedAt,
       if (dirty != null) 'dirty': dirty,
@@ -1109,6 +1285,10 @@ class VisitorsCompanion extends UpdateCompanion<Visitor> {
     Value<String>? category,
     Value<bool>? isVerified,
     Value<bool>? cardIssued,
+    Value<String?>? gender,
+    Value<String?>? ageBracket,
+    Value<String?>? residence,
+    Value<String?>? occupation,
     Value<DateTime>? registeredAt,
     Value<DateTime>? updatedAt,
     Value<bool>? dirty,
@@ -1123,6 +1303,10 @@ class VisitorsCompanion extends UpdateCompanion<Visitor> {
       category: category ?? this.category,
       isVerified: isVerified ?? this.isVerified,
       cardIssued: cardIssued ?? this.cardIssued,
+      gender: gender ?? this.gender,
+      ageBracket: ageBracket ?? this.ageBracket,
+      residence: residence ?? this.residence,
+      occupation: occupation ?? this.occupation,
       registeredAt: registeredAt ?? this.registeredAt,
       updatedAt: updatedAt ?? this.updatedAt,
       dirty: dirty ?? this.dirty,
@@ -1157,6 +1341,18 @@ class VisitorsCompanion extends UpdateCompanion<Visitor> {
     if (cardIssued.present) {
       map['card_issued'] = Variable<bool>(cardIssued.value);
     }
+    if (gender.present) {
+      map['gender'] = Variable<String>(gender.value);
+    }
+    if (ageBracket.present) {
+      map['age_bracket'] = Variable<String>(ageBracket.value);
+    }
+    if (residence.present) {
+      map['residence'] = Variable<String>(residence.value);
+    }
+    if (occupation.present) {
+      map['occupation'] = Variable<String>(occupation.value);
+    }
     if (registeredAt.present) {
       map['registered_at'] = Variable<DateTime>(registeredAt.value);
     }
@@ -1183,6 +1379,10 @@ class VisitorsCompanion extends UpdateCompanion<Visitor> {
           ..write('category: $category, ')
           ..write('isVerified: $isVerified, ')
           ..write('cardIssued: $cardIssued, ')
+          ..write('gender: $gender, ')
+          ..write('ageBracket: $ageBracket, ')
+          ..write('residence: $residence, ')
+          ..write('occupation: $occupation, ')
           ..write('registeredAt: $registeredAt, ')
           ..write('updatedAt: $updatedAt, ')
           ..write('dirty: $dirty, ')
@@ -1257,6 +1457,107 @@ class $ProgramsTable extends Programs with TableInfo<$ProgramsTable, Program> {
     type: DriftSqlType.string,
     requiredDuringInsert: false,
   );
+  static const VerificationMeta _sessionDateMeta = const VerificationMeta(
+    'sessionDate',
+  );
+  @override
+  late final GeneratedColumn<DateTime> sessionDate = GeneratedColumn<DateTime>(
+    'session_date',
+    aliasedName,
+    true,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _recurrenceMeta = const VerificationMeta(
+    'recurrence',
+  );
+  @override
+  late final GeneratedColumn<String> recurrence = GeneratedColumn<String>(
+    'recurrence',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant('daily'),
+  );
+  static const VerificationMeta _pillarMeta = const VerificationMeta('pillar');
+  @override
+  late final GeneratedColumn<String> pillar = GeneratedColumn<String>(
+    'pillar',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant('General Programs'),
+  );
+  static const VerificationMeta _formatMeta = const VerificationMeta('format');
+  @override
+  late final GeneratedColumn<String> format = GeneratedColumn<String>(
+    'format',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant('in_person'),
+  );
+  static const VerificationMeta _capacityMeta = const VerificationMeta(
+    'capacity',
+  );
+  @override
+  late final GeneratedColumn<int> capacity = GeneratedColumn<int>(
+    'capacity',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _facilitatorMeta = const VerificationMeta(
+    'facilitator',
+  );
+  @override
+  late final GeneratedColumn<String> facilitator = GeneratedColumn<String>(
+    'facilitator',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _walkInsAllowedMeta = const VerificationMeta(
+    'walkInsAllowed',
+  );
+  @override
+  late final GeneratedColumn<bool> walkInsAllowed = GeneratedColumn<bool>(
+    'walk_ins_allowed',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("walk_ins_allowed" IN (0, 1))',
+    ),
+    defaultValue: const Constant(true),
+  );
+  static const VerificationMeta _audienceMeta = const VerificationMeta(
+    'audience',
+  );
+  @override
+  late final GeneratedColumn<String> audience = GeneratedColumn<String>(
+    'audience',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _statusMeta = const VerificationMeta('status');
+  @override
+  late final GeneratedColumn<String> status = GeneratedColumn<String>(
+    'status',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant('published'),
+  );
   static const VerificationMeta _isActiveMeta = const VerificationMeta(
     'isActive',
   );
@@ -1316,6 +1617,15 @@ class $ProgramsTable extends Programs with TableInfo<$ProgramsTable, Program> {
     startMinute,
     endMinute,
     note,
+    sessionDate,
+    recurrence,
+    pillar,
+    format,
+    capacity,
+    facilitator,
+    walkInsAllowed,
+    audience,
+    status,
     isActive,
     sortOrder,
     updatedAt,
@@ -1373,6 +1683,69 @@ class $ProgramsTable extends Programs with TableInfo<$ProgramsTable, Program> {
       context.handle(
         _noteMeta,
         note.isAcceptableOrUnknown(data['note']!, _noteMeta),
+      );
+    }
+    if (data.containsKey('session_date')) {
+      context.handle(
+        _sessionDateMeta,
+        sessionDate.isAcceptableOrUnknown(
+          data['session_date']!,
+          _sessionDateMeta,
+        ),
+      );
+    }
+    if (data.containsKey('recurrence')) {
+      context.handle(
+        _recurrenceMeta,
+        recurrence.isAcceptableOrUnknown(data['recurrence']!, _recurrenceMeta),
+      );
+    }
+    if (data.containsKey('pillar')) {
+      context.handle(
+        _pillarMeta,
+        pillar.isAcceptableOrUnknown(data['pillar']!, _pillarMeta),
+      );
+    }
+    if (data.containsKey('format')) {
+      context.handle(
+        _formatMeta,
+        format.isAcceptableOrUnknown(data['format']!, _formatMeta),
+      );
+    }
+    if (data.containsKey('capacity')) {
+      context.handle(
+        _capacityMeta,
+        capacity.isAcceptableOrUnknown(data['capacity']!, _capacityMeta),
+      );
+    }
+    if (data.containsKey('facilitator')) {
+      context.handle(
+        _facilitatorMeta,
+        facilitator.isAcceptableOrUnknown(
+          data['facilitator']!,
+          _facilitatorMeta,
+        ),
+      );
+    }
+    if (data.containsKey('walk_ins_allowed')) {
+      context.handle(
+        _walkInsAllowedMeta,
+        walkInsAllowed.isAcceptableOrUnknown(
+          data['walk_ins_allowed']!,
+          _walkInsAllowedMeta,
+        ),
+      );
+    }
+    if (data.containsKey('audience')) {
+      context.handle(
+        _audienceMeta,
+        audience.isAcceptableOrUnknown(data['audience']!, _audienceMeta),
+      );
+    }
+    if (data.containsKey('status')) {
+      context.handle(
+        _statusMeta,
+        status.isAcceptableOrUnknown(data['status']!, _statusMeta),
       );
     }
     if (data.containsKey('is_active')) {
@@ -1434,6 +1807,42 @@ class $ProgramsTable extends Programs with TableInfo<$ProgramsTable, Program> {
         DriftSqlType.string,
         data['${effectivePrefix}note'],
       ),
+      sessionDate: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}session_date'],
+      ),
+      recurrence: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}recurrence'],
+      )!,
+      pillar: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}pillar'],
+      )!,
+      format: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}format'],
+      )!,
+      capacity: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}capacity'],
+      ),
+      facilitator: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}facilitator'],
+      ),
+      walkInsAllowed: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}walk_ins_allowed'],
+      )!,
+      audience: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}audience'],
+      ),
+      status: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}status'],
+      )!,
       isActive: attachedDatabase.typeMapping.read(
         DriftSqlType.bool,
         data['${effectivePrefix}is_active'],
@@ -1468,6 +1877,27 @@ class Program extends DataClass implements Insertable<Program> {
   final int? startMinute;
   final int? endMinute;
   final String? note;
+
+  /// First (or only) day of the session. Null = legacy daily program.
+  final DateTime? sessionDate;
+
+  /// 'none' (one-time), 'daily' or 'weekly'.
+  final String recurrence;
+
+  /// Strategic pillar used for ECA reporting.
+  final String pillar;
+
+  /// 'in_person', 'hybrid' or 'outreach'.
+  final String format;
+  final int? capacity;
+  final String? facilitator;
+  final bool walkInsAllowed;
+
+  /// Comma separated audience tags.
+  final String? audience;
+
+  /// 'draft' or 'published'. Drafts are hidden from check-in.
+  final String status;
   final bool isActive;
   final int sortOrder;
   final DateTime updatedAt;
@@ -1479,6 +1909,15 @@ class Program extends DataClass implements Insertable<Program> {
     this.startMinute,
     this.endMinute,
     this.note,
+    this.sessionDate,
+    required this.recurrence,
+    required this.pillar,
+    required this.format,
+    this.capacity,
+    this.facilitator,
+    required this.walkInsAllowed,
+    this.audience,
+    required this.status,
     required this.isActive,
     required this.sortOrder,
     required this.updatedAt,
@@ -1499,6 +1938,23 @@ class Program extends DataClass implements Insertable<Program> {
     if (!nullToAbsent || note != null) {
       map['note'] = Variable<String>(note);
     }
+    if (!nullToAbsent || sessionDate != null) {
+      map['session_date'] = Variable<DateTime>(sessionDate);
+    }
+    map['recurrence'] = Variable<String>(recurrence);
+    map['pillar'] = Variable<String>(pillar);
+    map['format'] = Variable<String>(format);
+    if (!nullToAbsent || capacity != null) {
+      map['capacity'] = Variable<int>(capacity);
+    }
+    if (!nullToAbsent || facilitator != null) {
+      map['facilitator'] = Variable<String>(facilitator);
+    }
+    map['walk_ins_allowed'] = Variable<bool>(walkInsAllowed);
+    if (!nullToAbsent || audience != null) {
+      map['audience'] = Variable<String>(audience);
+    }
+    map['status'] = Variable<String>(status);
     map['is_active'] = Variable<bool>(isActive);
     map['sort_order'] = Variable<int>(sortOrder);
     map['updated_at'] = Variable<DateTime>(updatedAt);
@@ -1518,6 +1974,23 @@ class Program extends DataClass implements Insertable<Program> {
           ? const Value.absent()
           : Value(endMinute),
       note: note == null && nullToAbsent ? const Value.absent() : Value(note),
+      sessionDate: sessionDate == null && nullToAbsent
+          ? const Value.absent()
+          : Value(sessionDate),
+      recurrence: Value(recurrence),
+      pillar: Value(pillar),
+      format: Value(format),
+      capacity: capacity == null && nullToAbsent
+          ? const Value.absent()
+          : Value(capacity),
+      facilitator: facilitator == null && nullToAbsent
+          ? const Value.absent()
+          : Value(facilitator),
+      walkInsAllowed: Value(walkInsAllowed),
+      audience: audience == null && nullToAbsent
+          ? const Value.absent()
+          : Value(audience),
+      status: Value(status),
       isActive: Value(isActive),
       sortOrder: Value(sortOrder),
       updatedAt: Value(updatedAt),
@@ -1537,6 +2010,15 @@ class Program extends DataClass implements Insertable<Program> {
       startMinute: serializer.fromJson<int?>(json['startMinute']),
       endMinute: serializer.fromJson<int?>(json['endMinute']),
       note: serializer.fromJson<String?>(json['note']),
+      sessionDate: serializer.fromJson<DateTime?>(json['sessionDate']),
+      recurrence: serializer.fromJson<String>(json['recurrence']),
+      pillar: serializer.fromJson<String>(json['pillar']),
+      format: serializer.fromJson<String>(json['format']),
+      capacity: serializer.fromJson<int?>(json['capacity']),
+      facilitator: serializer.fromJson<String?>(json['facilitator']),
+      walkInsAllowed: serializer.fromJson<bool>(json['walkInsAllowed']),
+      audience: serializer.fromJson<String?>(json['audience']),
+      status: serializer.fromJson<String>(json['status']),
       isActive: serializer.fromJson<bool>(json['isActive']),
       sortOrder: serializer.fromJson<int>(json['sortOrder']),
       updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
@@ -1553,6 +2035,15 @@ class Program extends DataClass implements Insertable<Program> {
       'startMinute': serializer.toJson<int?>(startMinute),
       'endMinute': serializer.toJson<int?>(endMinute),
       'note': serializer.toJson<String?>(note),
+      'sessionDate': serializer.toJson<DateTime?>(sessionDate),
+      'recurrence': serializer.toJson<String>(recurrence),
+      'pillar': serializer.toJson<String>(pillar),
+      'format': serializer.toJson<String>(format),
+      'capacity': serializer.toJson<int?>(capacity),
+      'facilitator': serializer.toJson<String?>(facilitator),
+      'walkInsAllowed': serializer.toJson<bool>(walkInsAllowed),
+      'audience': serializer.toJson<String?>(audience),
+      'status': serializer.toJson<String>(status),
       'isActive': serializer.toJson<bool>(isActive),
       'sortOrder': serializer.toJson<int>(sortOrder),
       'updatedAt': serializer.toJson<DateTime>(updatedAt),
@@ -1567,6 +2058,15 @@ class Program extends DataClass implements Insertable<Program> {
     Value<int?> startMinute = const Value.absent(),
     Value<int?> endMinute = const Value.absent(),
     Value<String?> note = const Value.absent(),
+    Value<DateTime?> sessionDate = const Value.absent(),
+    String? recurrence,
+    String? pillar,
+    String? format,
+    Value<int?> capacity = const Value.absent(),
+    Value<String?> facilitator = const Value.absent(),
+    bool? walkInsAllowed,
+    Value<String?> audience = const Value.absent(),
+    String? status,
     bool? isActive,
     int? sortOrder,
     DateTime? updatedAt,
@@ -1578,6 +2078,15 @@ class Program extends DataClass implements Insertable<Program> {
     startMinute: startMinute.present ? startMinute.value : this.startMinute,
     endMinute: endMinute.present ? endMinute.value : this.endMinute,
     note: note.present ? note.value : this.note,
+    sessionDate: sessionDate.present ? sessionDate.value : this.sessionDate,
+    recurrence: recurrence ?? this.recurrence,
+    pillar: pillar ?? this.pillar,
+    format: format ?? this.format,
+    capacity: capacity.present ? capacity.value : this.capacity,
+    facilitator: facilitator.present ? facilitator.value : this.facilitator,
+    walkInsAllowed: walkInsAllowed ?? this.walkInsAllowed,
+    audience: audience.present ? audience.value : this.audience,
+    status: status ?? this.status,
     isActive: isActive ?? this.isActive,
     sortOrder: sortOrder ?? this.sortOrder,
     updatedAt: updatedAt ?? this.updatedAt,
@@ -1593,6 +2102,23 @@ class Program extends DataClass implements Insertable<Program> {
           : this.startMinute,
       endMinute: data.endMinute.present ? data.endMinute.value : this.endMinute,
       note: data.note.present ? data.note.value : this.note,
+      sessionDate: data.sessionDate.present
+          ? data.sessionDate.value
+          : this.sessionDate,
+      recurrence: data.recurrence.present
+          ? data.recurrence.value
+          : this.recurrence,
+      pillar: data.pillar.present ? data.pillar.value : this.pillar,
+      format: data.format.present ? data.format.value : this.format,
+      capacity: data.capacity.present ? data.capacity.value : this.capacity,
+      facilitator: data.facilitator.present
+          ? data.facilitator.value
+          : this.facilitator,
+      walkInsAllowed: data.walkInsAllowed.present
+          ? data.walkInsAllowed.value
+          : this.walkInsAllowed,
+      audience: data.audience.present ? data.audience.value : this.audience,
+      status: data.status.present ? data.status.value : this.status,
       isActive: data.isActive.present ? data.isActive.value : this.isActive,
       sortOrder: data.sortOrder.present ? data.sortOrder.value : this.sortOrder,
       updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
@@ -1609,6 +2135,15 @@ class Program extends DataClass implements Insertable<Program> {
           ..write('startMinute: $startMinute, ')
           ..write('endMinute: $endMinute, ')
           ..write('note: $note, ')
+          ..write('sessionDate: $sessionDate, ')
+          ..write('recurrence: $recurrence, ')
+          ..write('pillar: $pillar, ')
+          ..write('format: $format, ')
+          ..write('capacity: $capacity, ')
+          ..write('facilitator: $facilitator, ')
+          ..write('walkInsAllowed: $walkInsAllowed, ')
+          ..write('audience: $audience, ')
+          ..write('status: $status, ')
           ..write('isActive: $isActive, ')
           ..write('sortOrder: $sortOrder, ')
           ..write('updatedAt: $updatedAt, ')
@@ -1625,6 +2160,15 @@ class Program extends DataClass implements Insertable<Program> {
     startMinute,
     endMinute,
     note,
+    sessionDate,
+    recurrence,
+    pillar,
+    format,
+    capacity,
+    facilitator,
+    walkInsAllowed,
+    audience,
+    status,
     isActive,
     sortOrder,
     updatedAt,
@@ -1640,6 +2184,15 @@ class Program extends DataClass implements Insertable<Program> {
           other.startMinute == this.startMinute &&
           other.endMinute == this.endMinute &&
           other.note == this.note &&
+          other.sessionDate == this.sessionDate &&
+          other.recurrence == this.recurrence &&
+          other.pillar == this.pillar &&
+          other.format == this.format &&
+          other.capacity == this.capacity &&
+          other.facilitator == this.facilitator &&
+          other.walkInsAllowed == this.walkInsAllowed &&
+          other.audience == this.audience &&
+          other.status == this.status &&
           other.isActive == this.isActive &&
           other.sortOrder == this.sortOrder &&
           other.updatedAt == this.updatedAt &&
@@ -1653,6 +2206,15 @@ class ProgramsCompanion extends UpdateCompanion<Program> {
   final Value<int?> startMinute;
   final Value<int?> endMinute;
   final Value<String?> note;
+  final Value<DateTime?> sessionDate;
+  final Value<String> recurrence;
+  final Value<String> pillar;
+  final Value<String> format;
+  final Value<int?> capacity;
+  final Value<String?> facilitator;
+  final Value<bool> walkInsAllowed;
+  final Value<String?> audience;
+  final Value<String> status;
   final Value<bool> isActive;
   final Value<int> sortOrder;
   final Value<DateTime> updatedAt;
@@ -1665,6 +2227,15 @@ class ProgramsCompanion extends UpdateCompanion<Program> {
     this.startMinute = const Value.absent(),
     this.endMinute = const Value.absent(),
     this.note = const Value.absent(),
+    this.sessionDate = const Value.absent(),
+    this.recurrence = const Value.absent(),
+    this.pillar = const Value.absent(),
+    this.format = const Value.absent(),
+    this.capacity = const Value.absent(),
+    this.facilitator = const Value.absent(),
+    this.walkInsAllowed = const Value.absent(),
+    this.audience = const Value.absent(),
+    this.status = const Value.absent(),
     this.isActive = const Value.absent(),
     this.sortOrder = const Value.absent(),
     this.updatedAt = const Value.absent(),
@@ -1678,6 +2249,15 @@ class ProgramsCompanion extends UpdateCompanion<Program> {
     this.startMinute = const Value.absent(),
     this.endMinute = const Value.absent(),
     this.note = const Value.absent(),
+    this.sessionDate = const Value.absent(),
+    this.recurrence = const Value.absent(),
+    this.pillar = const Value.absent(),
+    this.format = const Value.absent(),
+    this.capacity = const Value.absent(),
+    this.facilitator = const Value.absent(),
+    this.walkInsAllowed = const Value.absent(),
+    this.audience = const Value.absent(),
+    this.status = const Value.absent(),
     this.isActive = const Value.absent(),
     this.sortOrder = const Value.absent(),
     required DateTime updatedAt,
@@ -1694,6 +2274,15 @@ class ProgramsCompanion extends UpdateCompanion<Program> {
     Expression<int>? startMinute,
     Expression<int>? endMinute,
     Expression<String>? note,
+    Expression<DateTime>? sessionDate,
+    Expression<String>? recurrence,
+    Expression<String>? pillar,
+    Expression<String>? format,
+    Expression<int>? capacity,
+    Expression<String>? facilitator,
+    Expression<bool>? walkInsAllowed,
+    Expression<String>? audience,
+    Expression<String>? status,
     Expression<bool>? isActive,
     Expression<int>? sortOrder,
     Expression<DateTime>? updatedAt,
@@ -1707,6 +2296,15 @@ class ProgramsCompanion extends UpdateCompanion<Program> {
       if (startMinute != null) 'start_minute': startMinute,
       if (endMinute != null) 'end_minute': endMinute,
       if (note != null) 'note': note,
+      if (sessionDate != null) 'session_date': sessionDate,
+      if (recurrence != null) 'recurrence': recurrence,
+      if (pillar != null) 'pillar': pillar,
+      if (format != null) 'format': format,
+      if (capacity != null) 'capacity': capacity,
+      if (facilitator != null) 'facilitator': facilitator,
+      if (walkInsAllowed != null) 'walk_ins_allowed': walkInsAllowed,
+      if (audience != null) 'audience': audience,
+      if (status != null) 'status': status,
       if (isActive != null) 'is_active': isActive,
       if (sortOrder != null) 'sort_order': sortOrder,
       if (updatedAt != null) 'updated_at': updatedAt,
@@ -1722,6 +2320,15 @@ class ProgramsCompanion extends UpdateCompanion<Program> {
     Value<int?>? startMinute,
     Value<int?>? endMinute,
     Value<String?>? note,
+    Value<DateTime?>? sessionDate,
+    Value<String>? recurrence,
+    Value<String>? pillar,
+    Value<String>? format,
+    Value<int?>? capacity,
+    Value<String?>? facilitator,
+    Value<bool>? walkInsAllowed,
+    Value<String?>? audience,
+    Value<String>? status,
     Value<bool>? isActive,
     Value<int>? sortOrder,
     Value<DateTime>? updatedAt,
@@ -1735,6 +2342,15 @@ class ProgramsCompanion extends UpdateCompanion<Program> {
       startMinute: startMinute ?? this.startMinute,
       endMinute: endMinute ?? this.endMinute,
       note: note ?? this.note,
+      sessionDate: sessionDate ?? this.sessionDate,
+      recurrence: recurrence ?? this.recurrence,
+      pillar: pillar ?? this.pillar,
+      format: format ?? this.format,
+      capacity: capacity ?? this.capacity,
+      facilitator: facilitator ?? this.facilitator,
+      walkInsAllowed: walkInsAllowed ?? this.walkInsAllowed,
+      audience: audience ?? this.audience,
+      status: status ?? this.status,
       isActive: isActive ?? this.isActive,
       sortOrder: sortOrder ?? this.sortOrder,
       updatedAt: updatedAt ?? this.updatedAt,
@@ -1764,6 +2380,33 @@ class ProgramsCompanion extends UpdateCompanion<Program> {
     if (note.present) {
       map['note'] = Variable<String>(note.value);
     }
+    if (sessionDate.present) {
+      map['session_date'] = Variable<DateTime>(sessionDate.value);
+    }
+    if (recurrence.present) {
+      map['recurrence'] = Variable<String>(recurrence.value);
+    }
+    if (pillar.present) {
+      map['pillar'] = Variable<String>(pillar.value);
+    }
+    if (format.present) {
+      map['format'] = Variable<String>(format.value);
+    }
+    if (capacity.present) {
+      map['capacity'] = Variable<int>(capacity.value);
+    }
+    if (facilitator.present) {
+      map['facilitator'] = Variable<String>(facilitator.value);
+    }
+    if (walkInsAllowed.present) {
+      map['walk_ins_allowed'] = Variable<bool>(walkInsAllowed.value);
+    }
+    if (audience.present) {
+      map['audience'] = Variable<String>(audience.value);
+    }
+    if (status.present) {
+      map['status'] = Variable<String>(status.value);
+    }
     if (isActive.present) {
       map['is_active'] = Variable<bool>(isActive.value);
     }
@@ -1791,8 +2434,486 @@ class ProgramsCompanion extends UpdateCompanion<Program> {
           ..write('startMinute: $startMinute, ')
           ..write('endMinute: $endMinute, ')
           ..write('note: $note, ')
+          ..write('sessionDate: $sessionDate, ')
+          ..write('recurrence: $recurrence, ')
+          ..write('pillar: $pillar, ')
+          ..write('format: $format, ')
+          ..write('capacity: $capacity, ')
+          ..write('facilitator: $facilitator, ')
+          ..write('walkInsAllowed: $walkInsAllowed, ')
+          ..write('audience: $audience, ')
+          ..write('status: $status, ')
           ..write('isActive: $isActive, ')
           ..write('sortOrder: $sortOrder, ')
+          ..write('updatedAt: $updatedAt, ')
+          ..write('dirty: $dirty, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $ProgramRegistrationsTable extends ProgramRegistrations
+    with TableInfo<$ProgramRegistrationsTable, ProgramRegistration> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $ProgramRegistrationsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _programIdMeta = const VerificationMeta(
+    'programId',
+  );
+  @override
+  late final GeneratedColumn<String> programId = GeneratedColumn<String>(
+    'program_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _visitorIdMeta = const VerificationMeta(
+    'visitorId',
+  );
+  @override
+  late final GeneratedColumn<String> visitorId = GeneratedColumn<String>(
+    'visitor_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _sessionDayMeta = const VerificationMeta(
+    'sessionDay',
+  );
+  @override
+  late final GeneratedColumn<DateTime> sessionDay = GeneratedColumn<DateTime>(
+    'session_day',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _createdAtMeta = const VerificationMeta(
+    'createdAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> createdAt = GeneratedColumn<DateTime>(
+    'created_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _updatedAtMeta = const VerificationMeta(
+    'updatedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> updatedAt = GeneratedColumn<DateTime>(
+    'updated_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _dirtyMeta = const VerificationMeta('dirty');
+  @override
+  late final GeneratedColumn<bool> dirty = GeneratedColumn<bool>(
+    'dirty',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("dirty" IN (0, 1))',
+    ),
+    defaultValue: const Constant(true),
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    programId,
+    visitorId,
+    sessionDay,
+    createdAt,
+    updatedAt,
+    dirty,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'program_registrations';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<ProgramRegistration> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('program_id')) {
+      context.handle(
+        _programIdMeta,
+        programId.isAcceptableOrUnknown(data['program_id']!, _programIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_programIdMeta);
+    }
+    if (data.containsKey('visitor_id')) {
+      context.handle(
+        _visitorIdMeta,
+        visitorId.isAcceptableOrUnknown(data['visitor_id']!, _visitorIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_visitorIdMeta);
+    }
+    if (data.containsKey('session_day')) {
+      context.handle(
+        _sessionDayMeta,
+        sessionDay.isAcceptableOrUnknown(data['session_day']!, _sessionDayMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_sessionDayMeta);
+    }
+    if (data.containsKey('created_at')) {
+      context.handle(
+        _createdAtMeta,
+        createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_createdAtMeta);
+    }
+    if (data.containsKey('updated_at')) {
+      context.handle(
+        _updatedAtMeta,
+        updatedAt.isAcceptableOrUnknown(data['updated_at']!, _updatedAtMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_updatedAtMeta);
+    }
+    if (data.containsKey('dirty')) {
+      context.handle(
+        _dirtyMeta,
+        dirty.isAcceptableOrUnknown(data['dirty']!, _dirtyMeta),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  ProgramRegistration map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return ProgramRegistration(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}id'],
+      )!,
+      programId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}program_id'],
+      )!,
+      visitorId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}visitor_id'],
+      )!,
+      sessionDay: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}session_day'],
+      )!,
+      createdAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}created_at'],
+      )!,
+      updatedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}updated_at'],
+      )!,
+      dirty: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}dirty'],
+      )!,
+    );
+  }
+
+  @override
+  $ProgramRegistrationsTable createAlias(String alias) {
+    return $ProgramRegistrationsTable(attachedDatabase, alias);
+  }
+}
+
+class ProgramRegistration extends DataClass
+    implements Insertable<ProgramRegistration> {
+  final String id;
+  final String programId;
+  final String visitorId;
+
+  /// Midnight of the session day.
+  final DateTime sessionDay;
+  final DateTime createdAt;
+  final DateTime updatedAt;
+  final bool dirty;
+  const ProgramRegistration({
+    required this.id,
+    required this.programId,
+    required this.visitorId,
+    required this.sessionDay,
+    required this.createdAt,
+    required this.updatedAt,
+    required this.dirty,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['program_id'] = Variable<String>(programId);
+    map['visitor_id'] = Variable<String>(visitorId);
+    map['session_day'] = Variable<DateTime>(sessionDay);
+    map['created_at'] = Variable<DateTime>(createdAt);
+    map['updated_at'] = Variable<DateTime>(updatedAt);
+    map['dirty'] = Variable<bool>(dirty);
+    return map;
+  }
+
+  ProgramRegistrationsCompanion toCompanion(bool nullToAbsent) {
+    return ProgramRegistrationsCompanion(
+      id: Value(id),
+      programId: Value(programId),
+      visitorId: Value(visitorId),
+      sessionDay: Value(sessionDay),
+      createdAt: Value(createdAt),
+      updatedAt: Value(updatedAt),
+      dirty: Value(dirty),
+    );
+  }
+
+  factory ProgramRegistration.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return ProgramRegistration(
+      id: serializer.fromJson<String>(json['id']),
+      programId: serializer.fromJson<String>(json['programId']),
+      visitorId: serializer.fromJson<String>(json['visitorId']),
+      sessionDay: serializer.fromJson<DateTime>(json['sessionDay']),
+      createdAt: serializer.fromJson<DateTime>(json['createdAt']),
+      updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
+      dirty: serializer.fromJson<bool>(json['dirty']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'programId': serializer.toJson<String>(programId),
+      'visitorId': serializer.toJson<String>(visitorId),
+      'sessionDay': serializer.toJson<DateTime>(sessionDay),
+      'createdAt': serializer.toJson<DateTime>(createdAt),
+      'updatedAt': serializer.toJson<DateTime>(updatedAt),
+      'dirty': serializer.toJson<bool>(dirty),
+    };
+  }
+
+  ProgramRegistration copyWith({
+    String? id,
+    String? programId,
+    String? visitorId,
+    DateTime? sessionDay,
+    DateTime? createdAt,
+    DateTime? updatedAt,
+    bool? dirty,
+  }) => ProgramRegistration(
+    id: id ?? this.id,
+    programId: programId ?? this.programId,
+    visitorId: visitorId ?? this.visitorId,
+    sessionDay: sessionDay ?? this.sessionDay,
+    createdAt: createdAt ?? this.createdAt,
+    updatedAt: updatedAt ?? this.updatedAt,
+    dirty: dirty ?? this.dirty,
+  );
+  ProgramRegistration copyWithCompanion(ProgramRegistrationsCompanion data) {
+    return ProgramRegistration(
+      id: data.id.present ? data.id.value : this.id,
+      programId: data.programId.present ? data.programId.value : this.programId,
+      visitorId: data.visitorId.present ? data.visitorId.value : this.visitorId,
+      sessionDay: data.sessionDay.present
+          ? data.sessionDay.value
+          : this.sessionDay,
+      createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
+      updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
+      dirty: data.dirty.present ? data.dirty.value : this.dirty,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('ProgramRegistration(')
+          ..write('id: $id, ')
+          ..write('programId: $programId, ')
+          ..write('visitorId: $visitorId, ')
+          ..write('sessionDay: $sessionDay, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('updatedAt: $updatedAt, ')
+          ..write('dirty: $dirty')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    id,
+    programId,
+    visitorId,
+    sessionDay,
+    createdAt,
+    updatedAt,
+    dirty,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is ProgramRegistration &&
+          other.id == this.id &&
+          other.programId == this.programId &&
+          other.visitorId == this.visitorId &&
+          other.sessionDay == this.sessionDay &&
+          other.createdAt == this.createdAt &&
+          other.updatedAt == this.updatedAt &&
+          other.dirty == this.dirty);
+}
+
+class ProgramRegistrationsCompanion
+    extends UpdateCompanion<ProgramRegistration> {
+  final Value<String> id;
+  final Value<String> programId;
+  final Value<String> visitorId;
+  final Value<DateTime> sessionDay;
+  final Value<DateTime> createdAt;
+  final Value<DateTime> updatedAt;
+  final Value<bool> dirty;
+  final Value<int> rowid;
+  const ProgramRegistrationsCompanion({
+    this.id = const Value.absent(),
+    this.programId = const Value.absent(),
+    this.visitorId = const Value.absent(),
+    this.sessionDay = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.updatedAt = const Value.absent(),
+    this.dirty = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  ProgramRegistrationsCompanion.insert({
+    required String id,
+    required String programId,
+    required String visitorId,
+    required DateTime sessionDay,
+    required DateTime createdAt,
+    required DateTime updatedAt,
+    this.dirty = const Value.absent(),
+    this.rowid = const Value.absent(),
+  }) : id = Value(id),
+       programId = Value(programId),
+       visitorId = Value(visitorId),
+       sessionDay = Value(sessionDay),
+       createdAt = Value(createdAt),
+       updatedAt = Value(updatedAt);
+  static Insertable<ProgramRegistration> custom({
+    Expression<String>? id,
+    Expression<String>? programId,
+    Expression<String>? visitorId,
+    Expression<DateTime>? sessionDay,
+    Expression<DateTime>? createdAt,
+    Expression<DateTime>? updatedAt,
+    Expression<bool>? dirty,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (programId != null) 'program_id': programId,
+      if (visitorId != null) 'visitor_id': visitorId,
+      if (sessionDay != null) 'session_day': sessionDay,
+      if (createdAt != null) 'created_at': createdAt,
+      if (updatedAt != null) 'updated_at': updatedAt,
+      if (dirty != null) 'dirty': dirty,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  ProgramRegistrationsCompanion copyWith({
+    Value<String>? id,
+    Value<String>? programId,
+    Value<String>? visitorId,
+    Value<DateTime>? sessionDay,
+    Value<DateTime>? createdAt,
+    Value<DateTime>? updatedAt,
+    Value<bool>? dirty,
+    Value<int>? rowid,
+  }) {
+    return ProgramRegistrationsCompanion(
+      id: id ?? this.id,
+      programId: programId ?? this.programId,
+      visitorId: visitorId ?? this.visitorId,
+      sessionDay: sessionDay ?? this.sessionDay,
+      createdAt: createdAt ?? this.createdAt,
+      updatedAt: updatedAt ?? this.updatedAt,
+      dirty: dirty ?? this.dirty,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (programId.present) {
+      map['program_id'] = Variable<String>(programId.value);
+    }
+    if (visitorId.present) {
+      map['visitor_id'] = Variable<String>(visitorId.value);
+    }
+    if (sessionDay.present) {
+      map['session_day'] = Variable<DateTime>(sessionDay.value);
+    }
+    if (createdAt.present) {
+      map['created_at'] = Variable<DateTime>(createdAt.value);
+    }
+    if (updatedAt.present) {
+      map['updated_at'] = Variable<DateTime>(updatedAt.value);
+    }
+    if (dirty.present) {
+      map['dirty'] = Variable<bool>(dirty.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('ProgramRegistrationsCompanion(')
+          ..write('id: $id, ')
+          ..write('programId: $programId, ')
+          ..write('visitorId: $visitorId, ')
+          ..write('sessionDay: $sessionDay, ')
+          ..write('createdAt: $createdAt, ')
           ..write('updatedAt: $updatedAt, ')
           ..write('dirty: $dirty, ')
           ..write('rowid: $rowid')
@@ -2652,6 +3773,8 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   late final $StaffUsersTable staffUsers = $StaffUsersTable(this);
   late final $VisitorsTable visitors = $VisitorsTable(this);
   late final $ProgramsTable programs = $ProgramsTable(this);
+  late final $ProgramRegistrationsTable programRegistrations =
+      $ProgramRegistrationsTable(this);
   late final $VisitsTable visits = $VisitsTable(this);
   late final $AppSettingsTable appSettings = $AppSettingsTable(this);
   @override
@@ -2662,6 +3785,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     staffUsers,
     visitors,
     programs,
+    programRegistrations,
     visits,
     appSettings,
   ];
@@ -2943,6 +4067,10 @@ typedef $$VisitorsTableCreateCompanionBuilder = VisitorsCompanion Function({
   Value<String> category,
   Value<bool> isVerified,
   Value<bool> cardIssued,
+  Value<String?> gender,
+  Value<String?> ageBracket,
+  Value<String?> residence,
+  Value<String?> occupation,
   required DateTime registeredAt,
   required DateTime updatedAt,
   Value<bool> dirty,
@@ -2957,6 +4085,10 @@ typedef $$VisitorsTableUpdateCompanionBuilder = VisitorsCompanion Function({
   Value<String> category,
   Value<bool> isVerified,
   Value<bool> cardIssued,
+  Value<String?> gender,
+  Value<String?> ageBracket,
+  Value<String?> residence,
+  Value<String?> occupation,
   Value<DateTime> registeredAt,
   Value<DateTime> updatedAt,
   Value<bool> dirty,
@@ -3009,6 +4141,26 @@ class $$VisitorsTableFilterComposer
 
   ColumnFilters<bool> get cardIssued => $composableBuilder(
     column: $table.cardIssued,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get gender => $composableBuilder(
+    column: $table.gender,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get ageBracket => $composableBuilder(
+    column: $table.ageBracket,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get residence => $composableBuilder(
+    column: $table.residence,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get occupation => $composableBuilder(
+    column: $table.occupation,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -3077,6 +4229,26 @@ class $$VisitorsTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get gender => $composableBuilder(
+    column: $table.gender,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get ageBracket => $composableBuilder(
+    column: $table.ageBracket,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get residence => $composableBuilder(
+    column: $table.residence,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get occupation => $composableBuilder(
+    column: $table.occupation,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<DateTime> get registeredAt => $composableBuilder(
     column: $table.registeredAt,
     builder: (column) => ColumnOrderings(column),
@@ -3130,6 +4302,22 @@ class $$VisitorsTableAnnotationComposer
     builder: (column) => column,
   );
 
+  GeneratedColumn<String> get gender =>
+      $composableBuilder(column: $table.gender, builder: (column) => column);
+
+  GeneratedColumn<String> get ageBracket => $composableBuilder(
+    column: $table.ageBracket,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get residence =>
+      $composableBuilder(column: $table.residence, builder: (column) => column);
+
+  GeneratedColumn<String> get occupation => $composableBuilder(
+    column: $table.occupation,
+    builder: (column) => column,
+  );
+
   GeneratedColumn<DateTime> get registeredAt => $composableBuilder(
     column: $table.registeredAt,
     builder: (column) => column,
@@ -3178,6 +4366,10 @@ class $$VisitorsTableTableManager
                 Value<String> category = const Value.absent(),
                 Value<bool> isVerified = const Value.absent(),
                 Value<bool> cardIssued = const Value.absent(),
+                Value<String?> gender = const Value.absent(),
+                Value<String?> ageBracket = const Value.absent(),
+                Value<String?> residence = const Value.absent(),
+                Value<String?> occupation = const Value.absent(),
                 Value<DateTime> registeredAt = const Value.absent(),
                 Value<DateTime> updatedAt = const Value.absent(),
                 Value<bool> dirty = const Value.absent(),
@@ -3191,6 +4383,10 @@ class $$VisitorsTableTableManager
                 category: category,
                 isVerified: isVerified,
                 cardIssued: cardIssued,
+                gender: gender,
+                ageBracket: ageBracket,
+                residence: residence,
+                occupation: occupation,
                 registeredAt: registeredAt,
                 updatedAt: updatedAt,
                 dirty: dirty,
@@ -3206,6 +4402,10 @@ class $$VisitorsTableTableManager
                 Value<String> category = const Value.absent(),
                 Value<bool> isVerified = const Value.absent(),
                 Value<bool> cardIssued = const Value.absent(),
+                Value<String?> gender = const Value.absent(),
+                Value<String?> ageBracket = const Value.absent(),
+                Value<String?> residence = const Value.absent(),
+                Value<String?> occupation = const Value.absent(),
                 required DateTime registeredAt,
                 required DateTime updatedAt,
                 Value<bool> dirty = const Value.absent(),
@@ -3219,6 +4419,10 @@ class $$VisitorsTableTableManager
                 category: category,
                 isVerified: isVerified,
                 cardIssued: cardIssued,
+                gender: gender,
+                ageBracket: ageBracket,
+                residence: residence,
+                occupation: occupation,
                 registeredAt: registeredAt,
                 updatedAt: updatedAt,
                 dirty: dirty,
@@ -3262,6 +4466,15 @@ typedef $$ProgramsTableCreateCompanionBuilder = ProgramsCompanion Function({
   Value<int?> startMinute,
   Value<int?> endMinute,
   Value<String?> note,
+  Value<DateTime?> sessionDate,
+  Value<String> recurrence,
+  Value<String> pillar,
+  Value<String> format,
+  Value<int?> capacity,
+  Value<String?> facilitator,
+  Value<bool> walkInsAllowed,
+  Value<String?> audience,
+  Value<String> status,
   Value<bool> isActive,
   Value<int> sortOrder,
   required DateTime updatedAt,
@@ -3275,6 +4488,15 @@ typedef $$ProgramsTableUpdateCompanionBuilder = ProgramsCompanion Function({
   Value<int?> startMinute,
   Value<int?> endMinute,
   Value<String?> note,
+  Value<DateTime?> sessionDate,
+  Value<String> recurrence,
+  Value<String> pillar,
+  Value<String> format,
+  Value<int?> capacity,
+  Value<String?> facilitator,
+  Value<bool> walkInsAllowed,
+  Value<String?> audience,
+  Value<String> status,
   Value<bool> isActive,
   Value<int> sortOrder,
   Value<DateTime> updatedAt,
@@ -3318,6 +4540,51 @@ class $$ProgramsTableFilterComposer
 
   ColumnFilters<String> get note => $composableBuilder(
     column: $table.note,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get sessionDate => $composableBuilder(
+    column: $table.sessionDate,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get recurrence => $composableBuilder(
+    column: $table.recurrence,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get pillar => $composableBuilder(
+    column: $table.pillar,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get format => $composableBuilder(
+    column: $table.format,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get capacity => $composableBuilder(
+    column: $table.capacity,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get facilitator => $composableBuilder(
+    column: $table.facilitator,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get walkInsAllowed => $composableBuilder(
+    column: $table.walkInsAllowed,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get audience => $composableBuilder(
+    column: $table.audience,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get status => $composableBuilder(
+    column: $table.status,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -3381,6 +4648,51 @@ class $$ProgramsTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<DateTime> get sessionDate => $composableBuilder(
+    column: $table.sessionDate,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get recurrence => $composableBuilder(
+    column: $table.recurrence,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get pillar => $composableBuilder(
+    column: $table.pillar,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get format => $composableBuilder(
+    column: $table.format,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get capacity => $composableBuilder(
+    column: $table.capacity,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get facilitator => $composableBuilder(
+    column: $table.facilitator,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get walkInsAllowed => $composableBuilder(
+    column: $table.walkInsAllowed,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get audience => $composableBuilder(
+    column: $table.audience,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get status => $composableBuilder(
+    column: $table.status,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<bool> get isActive => $composableBuilder(
     column: $table.isActive,
     builder: (column) => ColumnOrderings(column),
@@ -3431,6 +4743,41 @@ class $$ProgramsTableAnnotationComposer
   GeneratedColumn<String> get note =>
       $composableBuilder(column: $table.note, builder: (column) => column);
 
+  GeneratedColumn<DateTime> get sessionDate => $composableBuilder(
+    column: $table.sessionDate,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get recurrence => $composableBuilder(
+    column: $table.recurrence,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get pillar =>
+      $composableBuilder(column: $table.pillar, builder: (column) => column);
+
+  GeneratedColumn<String> get format =>
+      $composableBuilder(column: $table.format, builder: (column) => column);
+
+  GeneratedColumn<int> get capacity =>
+      $composableBuilder(column: $table.capacity, builder: (column) => column);
+
+  GeneratedColumn<String> get facilitator => $composableBuilder(
+    column: $table.facilitator,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<bool> get walkInsAllowed => $composableBuilder(
+    column: $table.walkInsAllowed,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get audience =>
+      $composableBuilder(column: $table.audience, builder: (column) => column);
+
+  GeneratedColumn<String> get status =>
+      $composableBuilder(column: $table.status, builder: (column) => column);
+
   GeneratedColumn<bool> get isActive =>
       $composableBuilder(column: $table.isActive, builder: (column) => column);
 
@@ -3478,6 +4825,15 @@ class $$ProgramsTableTableManager
                 Value<int?> startMinute = const Value.absent(),
                 Value<int?> endMinute = const Value.absent(),
                 Value<String?> note = const Value.absent(),
+                Value<DateTime?> sessionDate = const Value.absent(),
+                Value<String> recurrence = const Value.absent(),
+                Value<String> pillar = const Value.absent(),
+                Value<String> format = const Value.absent(),
+                Value<int?> capacity = const Value.absent(),
+                Value<String?> facilitator = const Value.absent(),
+                Value<bool> walkInsAllowed = const Value.absent(),
+                Value<String?> audience = const Value.absent(),
+                Value<String> status = const Value.absent(),
                 Value<bool> isActive = const Value.absent(),
                 Value<int> sortOrder = const Value.absent(),
                 Value<DateTime> updatedAt = const Value.absent(),
@@ -3490,6 +4846,15 @@ class $$ProgramsTableTableManager
                 startMinute: startMinute,
                 endMinute: endMinute,
                 note: note,
+                sessionDate: sessionDate,
+                recurrence: recurrence,
+                pillar: pillar,
+                format: format,
+                capacity: capacity,
+                facilitator: facilitator,
+                walkInsAllowed: walkInsAllowed,
+                audience: audience,
+                status: status,
                 isActive: isActive,
                 sortOrder: sortOrder,
                 updatedAt: updatedAt,
@@ -3504,6 +4869,15 @@ class $$ProgramsTableTableManager
                 Value<int?> startMinute = const Value.absent(),
                 Value<int?> endMinute = const Value.absent(),
                 Value<String?> note = const Value.absent(),
+                Value<DateTime?> sessionDate = const Value.absent(),
+                Value<String> recurrence = const Value.absent(),
+                Value<String> pillar = const Value.absent(),
+                Value<String> format = const Value.absent(),
+                Value<int?> capacity = const Value.absent(),
+                Value<String?> facilitator = const Value.absent(),
+                Value<bool> walkInsAllowed = const Value.absent(),
+                Value<String?> audience = const Value.absent(),
+                Value<String> status = const Value.absent(),
                 Value<bool> isActive = const Value.absent(),
                 Value<int> sortOrder = const Value.absent(),
                 required DateTime updatedAt,
@@ -3516,6 +4890,15 @@ class $$ProgramsTableTableManager
                 startMinute: startMinute,
                 endMinute: endMinute,
                 note: note,
+                sessionDate: sessionDate,
+                recurrence: recurrence,
+                pillar: pillar,
+                format: format,
+                capacity: capacity,
+                facilitator: facilitator,
+                walkInsAllowed: walkInsAllowed,
+                audience: audience,
+                status: status,
                 isActive: isActive,
                 sortOrder: sortOrder,
                 updatedAt: updatedAt,
@@ -3551,6 +4934,273 @@ typedef $$ProgramsTableProcessedTableManager =
       $$ProgramsTableUpdateCompanionBuilder,
       (Program, BaseReferences<_$AppDatabase, $ProgramsTable, Program>),
       Program,
+      PrefetchHooks Function()
+    >;
+typedef $$ProgramRegistrationsTableCreateCompanionBuilder =
+    ProgramRegistrationsCompanion Function({
+      required String id,
+      required String programId,
+      required String visitorId,
+      required DateTime sessionDay,
+      required DateTime createdAt,
+      required DateTime updatedAt,
+      Value<bool> dirty,
+      Value<int> rowid,
+    });
+typedef $$ProgramRegistrationsTableUpdateCompanionBuilder =
+    ProgramRegistrationsCompanion Function({
+      Value<String> id,
+      Value<String> programId,
+      Value<String> visitorId,
+      Value<DateTime> sessionDay,
+      Value<DateTime> createdAt,
+      Value<DateTime> updatedAt,
+      Value<bool> dirty,
+      Value<int> rowid,
+    });
+
+class $$ProgramRegistrationsTableFilterComposer
+    extends Composer<_$AppDatabase, $ProgramRegistrationsTable> {
+  $$ProgramRegistrationsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get programId => $composableBuilder(
+    column: $table.programId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get visitorId => $composableBuilder(
+    column: $table.visitorId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get sessionDay => $composableBuilder(
+    column: $table.sessionDay,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get dirty => $composableBuilder(
+    column: $table.dirty,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$ProgramRegistrationsTableOrderingComposer
+    extends Composer<_$AppDatabase, $ProgramRegistrationsTable> {
+  $$ProgramRegistrationsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get programId => $composableBuilder(
+    column: $table.programId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get visitorId => $composableBuilder(
+    column: $table.visitorId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get sessionDay => $composableBuilder(
+    column: $table.sessionDay,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get dirty => $composableBuilder(
+    column: $table.dirty,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$ProgramRegistrationsTableAnnotationComposer
+    extends Composer<_$AppDatabase, $ProgramRegistrationsTable> {
+  $$ProgramRegistrationsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get programId =>
+      $composableBuilder(column: $table.programId, builder: (column) => column);
+
+  GeneratedColumn<String> get visitorId =>
+      $composableBuilder(column: $table.visitorId, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get sessionDay => $composableBuilder(
+    column: $table.sessionDay,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<DateTime> get createdAt =>
+      $composableBuilder(column: $table.createdAt, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get updatedAt =>
+      $composableBuilder(column: $table.updatedAt, builder: (column) => column);
+
+  GeneratedColumn<bool> get dirty =>
+      $composableBuilder(column: $table.dirty, builder: (column) => column);
+}
+
+class $$ProgramRegistrationsTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $ProgramRegistrationsTable,
+          ProgramRegistration,
+          $$ProgramRegistrationsTableFilterComposer,
+          $$ProgramRegistrationsTableOrderingComposer,
+          $$ProgramRegistrationsTableAnnotationComposer,
+          $$ProgramRegistrationsTableCreateCompanionBuilder,
+          $$ProgramRegistrationsTableUpdateCompanionBuilder,
+          (
+            ProgramRegistration,
+            BaseReferences<
+              _$AppDatabase,
+              $ProgramRegistrationsTable,
+              ProgramRegistration
+            >,
+          ),
+          ProgramRegistration,
+          PrefetchHooks Function()
+        > {
+  $$ProgramRegistrationsTableTableManager(
+    _$AppDatabase db,
+    $ProgramRegistrationsTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$ProgramRegistrationsTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$ProgramRegistrationsTableOrderingComposer(
+                $db: db,
+                $table: table,
+              ),
+          createComputedFieldComposer: () =>
+              $$ProgramRegistrationsTableAnnotationComposer(
+                $db: db,
+                $table: table,
+              ),
+          updateCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<String> programId = const Value.absent(),
+                Value<String> visitorId = const Value.absent(),
+                Value<DateTime> sessionDay = const Value.absent(),
+                Value<DateTime> createdAt = const Value.absent(),
+                Value<DateTime> updatedAt = const Value.absent(),
+                Value<bool> dirty = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => ProgramRegistrationsCompanion(
+                id: id,
+                programId: programId,
+                visitorId: visitorId,
+                sessionDay: sessionDay,
+                createdAt: createdAt,
+                updatedAt: updatedAt,
+                dirty: dirty,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String id,
+                required String programId,
+                required String visitorId,
+                required DateTime sessionDay,
+                required DateTime createdAt,
+                required DateTime updatedAt,
+                Value<bool> dirty = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => ProgramRegistrationsCompanion.insert(
+                id: id,
+                programId: programId,
+                visitorId: visitorId,
+                sessionDay: sessionDay,
+                createdAt: createdAt,
+                updatedAt: updatedAt,
+                dirty: dirty,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable<$ProgramRegistrationsTable, ProgramRegistration>(
+                    table,
+                  ),
+                  BaseReferences<
+                    _$AppDatabase,
+                    $ProgramRegistrationsTable,
+                    ProgramRegistration
+                  >(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$ProgramRegistrationsTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $ProgramRegistrationsTable,
+      ProgramRegistration,
+      $$ProgramRegistrationsTableFilterComposer,
+      $$ProgramRegistrationsTableOrderingComposer,
+      $$ProgramRegistrationsTableAnnotationComposer,
+      $$ProgramRegistrationsTableCreateCompanionBuilder,
+      $$ProgramRegistrationsTableUpdateCompanionBuilder,
+      (
+        ProgramRegistration,
+        BaseReferences<
+          _$AppDatabase,
+          $ProgramRegistrationsTable,
+          ProgramRegistration
+        >,
+      ),
+      ProgramRegistration,
       PrefetchHooks Function()
     >;
 typedef $$VisitsTableCreateCompanionBuilder = VisitsCompanion Function({
@@ -4019,6 +5669,8 @@ class $AppDatabaseManager {
       $$VisitorsTableTableManager(_db, _db.visitors);
   $$ProgramsTableTableManager get programs =>
       $$ProgramsTableTableManager(_db, _db.programs);
+  $$ProgramRegistrationsTableTableManager get programRegistrations =>
+      $$ProgramRegistrationsTableTableManager(_db, _db.programRegistrations);
   $$VisitsTableTableManager get visits =>
       $$VisitsTableTableManager(_db, _db.visits);
   $$AppSettingsTableTableManager get appSettings =>
